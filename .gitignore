@@ -37,3 +37,10 @@ bun.lockb
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
+
+# Environment variables
+.env
+.env.*
+
+# Prisma
+/src/generated/prisma
