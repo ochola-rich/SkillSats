@@ -131,29 +131,29 @@ function RootShell({ children }: { children: ReactNode }) {
     } }
   };`;
   const customCss = `
-    body { background-color: #F7F9F4; color: #181d18; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+    body { background-color: #030712; color: #f3f4f6; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; display: inline-block; }
-    .border-brand { border-color: #D4E6C3; }
-    .bg-brand-soft { background-color: #EAF3DE; }
-    .text-brand-dark { color: #3B6D11; }
-    .text-brand-hint { color: #9AA89A; }
-    .text-brand-sub { color: #5C6B5C; }
-    .structural-card { background:#ffffff; border:1px solid #D4E6C3; box-shadow:none; }
-    .structural-border { border: 1px solid #D4E6C3; }
-    .sats-amount { color:#27500A; font-family:'JetBrains Mono', monospace; font-size:36px; font-weight:600; }
-    .sidebar-active { background-color:#eaf3de; border-left:2px solid #3c6700; }
-    .video-container { aspect-ratio: 16 / 9; background:#181d18; position:relative; overflow:hidden; }
-    .paywall-overlay { background: rgba(24,29,24,0.6); backdrop-filter: blur(8px); }
+    .border-brand { border-color: #1f2937; }
+    .bg-brand-soft { background-color: #111827; }
+    .text-brand-dark { color: #fbbf24; }
+    .text-brand-hint { color: #9ca3af; }
+    .text-brand-sub { color: #d1d5db; }
+    .structural-card { background:#111827; border:1px solid #1f2937; box-shadow:none; }
+    .structural-border { border: 1px solid #1f2937; }
+    .sats-amount { color:#fbbf24; font-family:'JetBrains Mono', monospace; font-size:36px; font-weight:600; }
+    .sidebar-active { background-color:#111827; border-left:2px solid #fbbf24; }
+    .video-container { aspect-ratio: 16 / 9; background:#000000; position:relative; overflow:hidden; }
+    .paywall-overlay { background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background:#c2c9b4; border-radius:10px; }
-    .toggle-checkbox:checked { right:0; border-color:#3c6700; background-color:#3c6700; }
-    .toggle-checkbox:checked + .toggle-label { background-color:#3c6700; }
-    .drag-zone-active { border-color:#3c6700; background-color:#f9ffeb; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background:#4b5563; border-radius:10px; }
+    .toggle-checkbox:checked { right:0; border-color:#fbbf24; background-color:#fbbf24; }
+    .toggle-checkbox:checked + .toggle-label { background-color:#fbbf24; }
+    .drag-zone-active { border-color:#fbbf24; background-color:#1e1b4b; }
     * { box-shadow: none !important; }
     ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #F7F9F4; }
-    ::-webkit-scrollbar-thumb { background: #D4E6C3; border-radius: 4px; }
+    ::-webkit-scrollbar-track { background: #030712; }
+    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
   `;
   return (
     <html lang="en">
@@ -171,14 +171,102 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { AuthProvider, useAuth } from "../context/AuthContext";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ScreenSwitcher />
-      <Outlet />
+      <AuthProvider>
+        <RootLayout />
+      </AuthProvider>
     </QueryClientProvider>
+  );
+}
+
+function RootLayout() {
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-4xl text-yellow-400 animate-pulse font-extrabold">⚡</span>
+          <span className="text-sm text-gray-400">Loading SatsLearn...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-sans">
+      {/* Navbar */}
+      <header className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50 h-16">
+        <div className="max-w-6xl mx-auto px-4 h-full flex justify-between items-center">
+          <div className="flex items-center gap-6">
+            <Link to="/" className="text-xl font-bold flex items-center gap-1.5 hover:opacity-90">
+              <span className="text-yellow-400 font-extrabold">⚡</span>
+              <span>SatsLearn</span>
+            </Link>
+            <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+              <Link to="/" className="text-gray-300 hover:text-yellow-400 transition-colors">
+                Browse
+              </Link>
+              <Link to="/earn" className="text-gray-300 hover:text-yellow-400 transition-colors">
+                Earn Sats
+              </Link>
+              <Link to="/dashboard" className="text-gray-300 hover:text-yellow-400 transition-colors">
+                Dashboard
+              </Link>
+              <Link to="/wallet" className="text-gray-300 hover:text-yellow-400 transition-colors">
+                Wallet
+              </Link>
+            </nav>
+          </div>
+          <div className="flex items-center gap-4">
+            {isAuthenticated && user ? (
+              <>
+                <div className="flex items-center gap-1.5 bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700 text-sm font-semibold text-yellow-400">
+                  <span>⚡</span>
+                  <span>{(user.balanceSats ?? 0).toLocaleString()} sats</span>
+                </div>
+                <span className="text-xs text-gray-400 hidden sm:inline">@{user.username} ({user.role})</span>
+                <button
+                  onClick={logout}
+                  className="bg-gray-850 hover:bg-gray-800 text-gray-350 px-3 py-1.5 rounded text-xs border border-gray-700 transition-all cursor-pointer"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="bg-gray-850 hover:bg-gray-800 text-gray-200 border border-gray-700 px-3 py-1.5 rounded text-sm transition-all"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-gray-950 font-bold px-3 py-1.5 rounded text-sm transition-all"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-grow max-w-6xl w-full mx-auto px-4 py-8">
+        <Outlet />
+      </main>
+
+      {/* Screen Switcher */}
+      <ScreenSwitcher />
+    </div>
   );
 }
 
@@ -188,20 +276,18 @@ function ScreenSwitcher() {
     { to: "/earn", label: "Earn" },
     { to: "/wallet", label: "Wallet" },
     { to: "/dashboard", label: "Dashboard" },
-    { to: "/course", label: "Course" },
-    { to: "/upload", label: "Upload" },
   ];
   return (
-    <div className="fixed bottom-20 right-4 z-[100] flex flex-col gap-1 rounded-xl border border-[#D4E6C3] bg-white/95 p-2 backdrop-blur md:bottom-4">
-      <span className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[#5C6B5C]">
+    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-1 rounded-xl border border-gray-800 bg-gray-900/95 p-2 backdrop-blur">
+      <span className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
         Screens
       </span>
       {screens.map((s) => (
         <Link
           key={s.to}
           to={s.to}
-          className="rounded-lg px-3 py-1 text-xs font-medium text-[#374D17] hover:bg-[#EAF3DE]"
-          activeProps={{ className: "rounded-lg px-3 py-1 text-xs font-semibold bg-[#3c6700] text-white" }}
+          className="rounded-lg px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
+          activeProps={{ className: "rounded-lg px-3 py-1 text-xs font-semibold bg-yellow-400 text-gray-950" }}
           activeOptions={{ exact: true }}
         >
           {s.label}
@@ -210,3 +296,4 @@ function ScreenSwitcher() {
     </div>
   );
 }
+
