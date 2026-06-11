@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SatsLearn — Hackathon Build Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg-card: #111118;
+    --bg-card2: #16161f;
+    --border: rgba(255,255,255,0.07);
+    --border-accent: rgba(247,181,0,0.35);
+    --gold: #F7B500;
+    --gold-dim: #a87c00;
+    --gold-glow: rgba(247,181,0,0.12);
+    --purple: #8B5CF6;
+    --purple-dim: rgba(139,92,246,0.15);
+    --teal: #14B8A6;
+    --teal-dim: rgba(20,184,166,0.12);
+    --coral: #F97316;
+    --coral-dim: rgba(249,115,22,0.12);
+    --green: #22C55E;
+    --green-dim: rgba(34,197,94,0.12);
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --text-dim: #555;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.7;
+    padding: 0 0 6rem;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 5rem 2rem 4rem;
+    max-width: 860px;
+    margin: 0 auto;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.2rem;
+  }
+  .hero h1 span { color: var(--gold); }
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    max-width: 560px;
+    margin-bottom: 2.5rem;
+  }
+  .timeline-bar {
+    display: flex;
+    gap: 0;
+    border: 0.5px solid var(--border-accent);
+    border-radius: var(--radius);
+    overflow: hidden;
+    max-width: 680px;
+  }
+  .timeline-seg {
+    flex: 1;
+    padding: 0.7rem 1rem;
+    font-size: 11px;
+    font-family: var(--mono);
+    border-right: 0.5px solid var(--border-accent);
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .timeline-seg:last-child { border-right: none; }
+  .timeline-seg strong { display: block; color: var(--gold); font-size: 13px; margin-bottom: 2px; }
+
+  /* LAYOUT */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  /* SECTION */
+  .section {
+    padding: 4rem 0 2rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .section:last-child { border-bottom: none; }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.02em;
+  }
+  .section-desc {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    max-width: 580px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 1rem;
+  }
+  .card-gold { border-color: var(--border-accent); }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0.9rem;
+  }
+  .card-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .icon-gold { background: var(--gold-glow); color: var(--gold); }
+  .icon-purple { background: var(--purple-dim); color: var(--purple); }
+  .icon-teal { background: var(--teal-dim); color: var(--teal); }
+  .icon-coral { background: var(--coral-dim); color: var(--coral); }
+  .icon-green { background: var(--green-dim); color: var(--green); }
+
+  .card-title { font-weight: 600; font-size: 0.95rem; }
+  .card-meta { font-size: 11px; font-family: var(--mono); color: var(--text-dim); margin-left: auto; }
+
+  /* CODE BLOCKS */
+  .code-block {
+    background: #0d0d14;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.4rem;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-x: auto;
+    margin: 0.8rem 0;
+    white-space: pre;
+    color: #cdd6f4;
+  }
+  .code-block .kw { color: #cba6f7; }
+  .code-block .str { color: #a6e3a1; }
+  .code-block .cm { color: #6c7086; }
+  .code-block .fn { color: #89b4fa; }
+  .code-block .num { color: #fab387; }
+
+  /* PROMPT BLOCKS */
+  .prompt-block {
+    background: var(--bg-card2);
+    border-left: 2px solid var(--gold);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 1rem 1.2rem;
+    font-size: 0.88rem;
+    line-height: 1.75;
+    color: #ccc;
+    margin: 0.8rem 0 1.2rem;
+  }
+  .prompt-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 0.4rem;
+  }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+
+  /* HOUR BLOCKS */
+  .hour-block {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 0 1.5rem;
+    margin-bottom: 1.5rem;
+    align-items: start;
+  }
+  .hour-tag {
+    background: var(--gold-glow);
+    border: 0.5px solid var(--border-accent);
+    border-radius: 6px;
+    padding: 0.35rem 0.6rem;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gold);
+    text-align: center;
+    margin-top: 3px;
+  }
+  .hour-content { }
+  .hour-title { font-weight: 600; margin-bottom: 0.3rem; font-size: 0.95rem; }
+  .hour-tasks { font-size: 0.875rem; color: var(--text-muted); }
+  .hour-tasks li { margin-bottom: 3px; list-style: none; padding-left: 1rem; position: relative; }
+  .hour-tasks li::before { content: '→'; position: absolute; left: 0; color: var(--text-dim); }
+
+  /* API TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 1rem 0;
+  }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 0.5px solid var(--border);
+  }
+  td {
+    padding: 0.7rem 0.75rem;
+    border-bottom: 0.5px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  td:first-child { font-family: var(--mono); font-size: 11px; color: var(--teal); }
+  td:nth-child(2) { color: var(--text); font-size: 0.82rem; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge-gold { background: var(--gold-glow); color: var(--gold); border: 0.5px solid var(--border-accent); }
+  .badge-purple { background: var(--purple-dim); color: var(--purple); }
+  .badge-teal { background: var(--teal-dim); color: var(--teal); }
+  .badge-coral { background: var(--coral-dim); color: var(--coral); }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin: 1.2rem 0;
+  }
+  .flow-node {
+    background: var(--bg-card2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem 0.9rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .flow-node.gold { border-color: var(--border-accent); color: var(--gold); }
+  .flow-node.purple { border-color: rgba(139,92,246,0.3); color: var(--purple); }
+  .flow-node.teal { border-color: rgba(20,184,166,0.3); color: var(--teal); }
+  .flow-node.coral { border-color: rgba(249,115,22,0.3); color: var(--coral); }
+  .flow-arrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 0 6px;
+  }
+
+  /* SPLIT TABLE */
+  .split-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .split-row:last-child { border-bottom: none; }
+  .split-label { font-size: 0.875rem; width: 100px; color: var(--text-muted); flex-shrink: 0; }
+  .split-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .split-fill { height: 100%; border-radius: 3px; }
+  .split-pct { font-family: var(--mono); font-size: 12px; width: 40px; text-align: right; flex-shrink: 0; }
+
+  /* STACK CHECKLIST */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 0.5rem 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-box {
+    width: 18px; height: 18px;
+    border: 0.5px solid var(--border-accent);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    color: var(--gold);
+  }
+  .check-name { font-weight: 500; color: var(--text); min-width: 130px; }
+
+  @media (max-width: 640px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 2rem; }
+    .timeline-bar { flex-direction: column; }
+    .timeline-seg { border-right: none; border-bottom: 0.5px solid var(--border-accent); }
+    .timeline-seg:last-child { border-bottom: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <p class="hero-eyebrow">⚡ Hackathon Build Plan · 6 Hours</p>
+  <h1>Sats<span>Learn</span></h1>
+  <p class="hero-sub">A peer-to-peer education platform where creators earn Bitcoin via Lightning Network. Learn skills. Pay in sats. Get paid to watch ads.</p>
+  <div class="timeline-bar">
+    <div class="timeline-seg"><strong>H1</strong>Setup + DB</div>
+    <div class="timeline-seg"><strong>H2</strong>Auth + LND</div>
+    <div class="timeline-seg"><strong>H3</strong>Content API</div>
+    <div class="timeline-seg"><strong>H4</strong>Ads Engine</div>
+    <div class="timeline-seg"><strong>H5</strong>Frontend</div>
+    <div class="timeline-seg"><strong>H6</strong>Demo Polish</div>
+  </div>
+</div>
+
+<!-- TECH STACK -->
+<div class="container">
+<div class="section">
+  <p class="section-label">01 — Foundation</p>
+  <h2 class="section-title">Tech Stack</h2>
+  <p class="section-desc">Minimal surface area — ship fast, stay custodial for the hackathon.</p>
+
+  <div class="grid-2">
+    <div class="card card-gold">
+      <div class="card-header">
+        <div class="card-icon icon-gold">⚡</div>
+        <span class="card-title">Backend</span>
+        <span class="card-meta">Node.js</span>
+      </div>
+      <ul class="checklist">
+        <li><div class="check-box">✓</div><span class="check-name">Express.js</span><span>REST API + middleware</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">PostgreSQL</span><span>Users, wallets, videos, invoices</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">Prisma ORM</span><span>Schema + migrations</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">LND REST API</span><span>Invoice creation + settlement</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">JWT + bcrypt</span><span>Auth tokens</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">Multer</span><span>Video upload handling</span></li>
+      </ul>
+    </div>
+    <div class="card card-gold">
+      <div class="card-header">
+        <div class="card-icon icon-purple">◈</div>
+        <span class="card-title">Frontend</span>
+        <span class="card-meta">React</span>
+      </div>
+      <ul class="checklist">
+        <li><div class="check-box">✓</div><span class="check-name">React + Vite</span><span>Fast build, HMR</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">TailwindCSS</span><span>Utility styling</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">React Query</span><span>API state + caching</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">QRCode.react</span><span>Lightning invoice QR</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">React Router</span><span>Client routing</span></li>
+        <li><div class="check-box">✓</div><span class="check-name">Axios</span><span>HTTP client</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:0;">
+    <div class="card-header">
+      <div class="card-icon icon-teal">◎</div>
+      <span class="card-title">LND Node Setup</span>
+      <span class="card-meta">Polar / Voltage</span>
+    </div>
+    <p style="font-size:0.875rem; color:var(--text-muted); margin-bottom:0.8rem;">
+      For a hackathon, use <strong style="color:var(--teal)">Polar</strong> (local testnet, free, instant) or <strong style="color:var(--teal)">Voltage.cloud</strong> (hosted, live sats). You only need 3 env vars to call the LND REST API:
+    </p>
+    <div class="code-block"><span class="cm"># .env</span>
+LND_REST_HOST=<span class="str">https://localhost:8080</span>   <span class="cm"># Polar default</span>
+LND_MACAROON=<span class="str">0201036c6e64...</span>          <span class="cm"># hex-encoded admin.macaroon</span>
+LND_TLS_CERT=<span class="str">/path/to/tls.cert</span>        <span class="cm"># skip TLS verify in dev</span></div>
+  </div>
+</div>
+
+<!-- DATABASE SCHEMA -->
+<div class="section">
+  <p class="section-label">02 — Data</p>
+  <h2 class="section-title">Database Schema</h2>
+  <p class="section-desc">5 core tables. Keep it tight — you can extend after the demo.</p>
+
+  <div class="code-block"><span class="cm">// schema.prisma</span>
+
+<span class="kw">model</span> <span class="fn">User</span> {
+  id          <span class="fn">String</span>    @id @default(uuid())
+  email       <span class="fn">String</span>    @unique
+  username    <span class="fn">String</span>    @unique
+  password    <span class="fn">String</span>
+  role        <span class="fn">Role</span>      @default(<span class="fn">LEARNER</span>)   <span class="cm">// LEARNER | CREATOR | ADVERTISER</span>
+  balanceSats <span class="fn">Int</span>       @default(<span class="num">0</span>)           <span class="cm">// custodial balance</span>
+  createdAt   <span class="fn">DateTime</span>  @default(now())
+  videos      <span class="fn">Video</span>[]
+  purchases   <span class="fn">Purchase</span>[]
+  adWatches   <span class="fn">AdWatch</span>[]
+}
+
+<span class="kw">model</span> <span class="fn">Video</span> {
+  id          <span class="fn">String</span>    @id @default(uuid())
+  title       <span class="fn">String</span>
+  description <span class="fn">String</span>
+  url         <span class="fn">String</span>                          <span class="cm">// file path or CDN URL</span>
+  priceSats   <span class="fn">Int</span>                             <span class="cm">// 0 = free sample</span>
+  isFree      <span class="fn">Boolean</span>   @default(<span class="fn">false</span>)        <span class="cm">// first video of course</span>
+  courseId    <span class="fn">String</span>
+  creatorId   <span class="fn">String</span>
+  creator     <span class="fn">User</span>      @relation(fields: [creatorId], references: [id])
+  purchases   <span class="fn">Purchase</span>[]
+  createdAt   <span class="fn">DateTime</span>  @default(now())
+}
+
+<span class="kw">model</span> <span class="fn">Purchase</span> {
+  id          <span class="fn">String</span>    @id @default(uuid())
+  userId      <span class="fn">String</span>
+  videoId     <span class="fn">String</span>
+  paidSats    <span class="fn">Int</span>
+  invoice     <span class="fn">String</span>                          <span class="cm">// LND payment_request</span>
+  settled     <span class="fn">Boolean</span>   @default(<span class="fn">false</span>)
+  createdAt   <span class="fn">DateTime</span>  @default(now())
+  user        <span class="fn">User</span>      @relation(fields: [userId], references: [id])
+  video       <span class="fn">Video</span>     @relation(fields: [videoId], references: [id])
+}
+
+<span class="kw">model</span> <span class="fn">Ad</span> {
+  id          <span class="fn">String</span>    @id @default(uuid())
+  title       <span class="fn">String</span>
+  videoUrl    <span class="fn">String</span>
+  budgetSats  <span class="fn">Int</span>                             <span class="cm">// total budget deposited</span>
+  spentSats   <span class="fn">Int</span>       @default(<span class="num">0</span>)
+  rewardSats  <span class="fn">Int</span>                             <span class="cm">// per-view reward to user</span>
+  active      <span class="fn">Boolean</span>   @default(<span class="fn">true</span>)
+  watches     <span class="fn">AdWatch</span>[]
+}
+
+<span class="kw">model</span> <span class="fn">AdWatch</span> {
+  id          <span class="fn">String</span>    @id @default(uuid())
+  userId      <span class="fn">String</span>
+  adId        <span class="fn">String</span>
+  earnedSats  <span class="fn">Int</span>
+  watchedAt   <span class="fn">DateTime</span>  @default(now())
+  user        <span class="fn">User</span>      @relation(fields: [userId], references: [id])
+  ad          <span class="fn">Ad</span>        @relation(fields: [adId], references: [id])
+}</div>
+</div>
+
+<!-- LND API CALLS -->
+<div class="section">
+  <p class="section-label">03 — Lightning</p>
+  <h2 class="section-title">LND REST API Calls</h2>
+  <p class="section-desc">Every Lightning action you need for the MVP — all via the LND REST API. No gRPC needed.</p>
+
+  <div class="card card-gold" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+      <div class="card-icon icon-gold">⚡</div>
+      <span class="card-title">LND Client Helper</span>
+      <span class="card-meta">utils/lnd.js</span>
+    </div>
+    <div class="code-block"><span class="kw">const</span> axios = <span class="fn">require</span>(<span class="str">'axios'</span>)
+<span class="kw">const</span> fs = <span class="fn">require</span>(<span class="str">'fs'</span>)
+<span class="kw">const</span> https = <span class="fn">require</span>(<span class="str">'https'</span>)
+
+<span class="kw">const</span> lnd = axios.<span class="fn">create</span>({
+  baseURL: process.env.<span class="fn">LND_REST_HOST</span>,
+  headers: {
+    <span class="str">'Grpc-Metadata-Macaroon'</span>: process.env.<span class="fn">LND_MACAROON</span>
+  },
+  httpsAgent: <span class="kw">new</span> https.<span class="fn">Agent</span>({ rejectUnauthorized: <span class="kw">false</span> }) <span class="cm">// dev only</span>
+})
+
+module.exports = lnd</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Endpoint</th>
+        <th>What it does</th>
+        <th>When to call it</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>POST /v1/invoices</td>
+        <td>Create a Lightning invoice (payment_request + r_hash)</td>
+        <td>User wants to unlock a paid video</td>
+      </tr>
+      <tr>
+        <td>GET /v1/invoice/{r_hash}</td>
+        <td>Check if invoice is settled</td>
+        <td>Polling every 2s after showing QR code</td>
+      </tr>
+      <tr>
+        <td>GET /v1/balance/channels</td>
+        <td>Check node's channel balance</td>
+        <td>Admin dashboard / health check</td>
+      </tr>
+      <tr>
+        <td>POST /v1/channels/transactions</td>
+        <td>Send payment to external wallet (withdrawal)</td>
+        <td>Creator withdraws their earnings</td>
+      </tr>
+      <tr>
+        <td>GET /v1/payments</td>
+        <td>List all outgoing payments</td>
+        <td>Admin audit / creator payout history</td>
+      </tr>
+      <tr>
+        <td>GET /v1/getinfo</td>
+        <td>Node info (alias, pubkey, synced)</td>
+        <td>Health check on startup</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-teal">①</div>
+      <span class="card-title">Create Invoice — User buys a video</span>
+    </div>
+    <div class="code-block"><span class="cm">// POST /api/videos/:id/purchase</span>
+<span class="kw">const</span> <span class="fn">createVideoInvoice</span> = <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> video = <span class="kw">await</span> prisma.video.<span class="fn">findUnique</span>({ where: { id: req.params.id } })
+
+  <span class="kw">const</span> { data } = <span class="kw">await</span> lnd.<span class="fn">post</span>(<span class="str">'/v1/invoices'</span>, {
+    value: video.priceSats,
+    memo: <span class="str">`SatsLearn: ${video.title}`</span>,
+    expiry: <span class="num">600</span>         <span class="cm">// 10 min expiry</span>
+  })
+
+  <span class="cm">// Store invoice in DB</span>
+  <span class="kw">await</span> prisma.purchase.<span class="fn">create</span>({
+    data: {
+      userId: req.user.id,
+      videoId: video.id,
+      paidSats: video.priceSats,
+      invoice: data.payment_request,
+      settled: <span class="kw">false</span>
+    }
+  })
+
+  res.<span class="fn">json</span>({
+    payment_request: data.payment_request,   <span class="cm">// show as QR</span>
+    r_hash: data.r_hash,                     <span class="cm">// use to poll settlement</span>
+    amount_sats: video.priceSats
+  })
+}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-teal">②</div>
+      <span class="card-title">Poll Settlement + Split Revenue</span>
+    </div>
+    <div class="code-block"><span class="cm">// GET /api/invoices/:r_hash/status  (frontend polls every 2s)</span>
+<span class="kw">const</span> <span class="fn">checkInvoice</span> = <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> { data } = <span class="kw">await</span> lnd.<span class="fn">get</span>(<span class="str">`/v1/invoice/${req.params.r_hash}`</span>)
+
+  <span class="kw">if</span> (data.settled) {
+    <span class="kw">const</span> purchase = <span class="kw">await</span> prisma.purchase.<span class="fn">findFirst</span>({
+      where: { invoice: data.payment_request },
+      include: { video: { include: { creator: <span class="kw">true</span> } } }
+    })
+
+    <span class="kw">if</span> (!purchase.settled) {
+      <span class="kw">const</span> total = purchase.paidSats
+      <span class="kw">const</span> platformCut = <span class="fn">Math</span>.<span class="fn">floor</span>(total * <span class="num">0.10</span>)   <span class="cm">// 10% platform</span>
+      <span class="kw">const</span> creatorCut = total - platformCut            <span class="cm">// 90% creator</span>
+
+      <span class="cm">// Credit creator's custodial balance</span>
+      <span class="kw">await</span> prisma.user.<span class="fn">update</span>({
+        where: { id: purchase.video.creatorId },
+        data: { balanceSats: { increment: creatorCut } }
+      })
+
+      <span class="kw">await</span> prisma.purchase.<span class="fn">update</span>({
+        where: { id: purchase.id },
+        data: { settled: <span class="kw">true</span> }
+      })
+    }
+
+    <span class="kw">return</span> res.<span class="fn">json</span>({ settled: <span class="kw">true</span>, videoUrl: purchase.video.url })
+  }
+
+  res.<span class="fn">json</span>({ settled: <span class="kw">false</span> })
+}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-teal">③</div>
+      <span class="card-title">Creator Withdrawal</span>
+    </div>
+    <div class="code-block"><span class="cm">// POST /api/wallet/withdraw  — creator provides their LN invoice</span>
+<span class="kw">const</span> <span class="fn">withdraw</span> = <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> { payment_request, amount_sats } = req.body
+  <span class="kw">const</span> creator = <span class="kw">await</span> prisma.user.<span class="fn">findUnique</span>({ where: { id: req.user.id } })
+
+  <span class="kw">if</span> (creator.balanceSats < amount_sats) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ error: <span class="str">'Insufficient balance'</span> })
+  }
+
+  <span class="cm">// Deduct first (prevent double-spend)</span>
+  <span class="kw">await</span> prisma.user.<span class="fn">update</span>({
+    where: { id: req.user.id },
+    data: { balanceSats: { decrement: amount_sats } }
+  })
+
+  <span class="cm">// Pay out via LND</span>
+  <span class="kw">const</span> { data } = <span class="kw">await</span> lnd.<span class="fn">post</span>(<span class="str">'/v1/channels/transactions'</span>, {
+    payment_request,
+    amt: amount_sats   <span class="cm">// omit for exact-amount invoices</span>
+  })
+
+  res.<span class="fn">json</span>({ payment_hash: data.payment_hash, status: <span class="str">'sent'</span> })
+}</div>
+  </div>
+
+  <!-- Revenue split -->
+  <div class="card card-gold">
+    <div class="card-header">
+      <div class="card-icon icon-gold">◈</div>
+      <span class="card-title">Revenue Split Logic</span>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <p style="font-size:0.875rem; color:var(--text-muted); margin-bottom:1rem;">Every sat that enters the platform splits automatically:</p>
+      <div class="split-row">
+        <span class="split-label">Creator</span>
+        <div class="split-bar"><div class="split-fill" style="width:90%; background:var(--gold);"></div></div>
+        <span class="split-pct" style="color:var(--gold);">90%</span>
+      </div>
+      <div class="split-row">
+        <span class="split-label">Platform</span>
+        <div class="split-bar"><div class="split-fill" style="width:10%; background:var(--purple);"></div></div>
+        <span class="split-pct" style="color:var(--purple);">10%</span>
+      </div>
+      <p style="font-size:0.8rem; color:var(--text-dim); margin-top:0.8rem;">Ad revenue: 60% user · 30% platform · 10% reserve</p>
+    </div>
+    <div class="flow">
+      <div class="flow-node gold">Advertiser deposits budget</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Platform LND node</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node teal">User watches ad</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node purple">User balance +sats</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node coral">User buys course</div>
+    </div>
+  </div>
+</div>
+
+<!-- BACKEND PROMPTS -->
+<div class="section">
+  <p class="section-label">04 — Build Prompts</p>
+  <h2 class="section-title">Backend Prompts</h2>
+  <p class="section-desc">Paste these into Claude/Cursor one by one. Each is scoped to ~30 min of work.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-coral">B1</div>
+      <span class="card-title">Project Setup + DB</span>
+      <span class="badge badge-coral">Hour 1</span>
+    </div>
+    <div class="prompt-label">Prompt</div>
+    <div class="prompt-block">
+Create a Node.js + Express backend for a Lightning-powered education platform called SatsLearn. Set up the project with: Express, Prisma ORM with PostgreSQL, JWT authentication with bcrypt, dotenv for environment variables, and cors. Create this exact Prisma schema with 5 models: User (id, email, username, password, role enum LEARNER/CREATOR/ADVERTISER, balanceSats int default 0, createdAt), Video (id, title, description, url, priceSats, isFree boolean, courseId string, creatorId foreign key to User, createdAt), Purchase (id, userId, videoId, paidSats, invoice string, settled boolean default false, createdAt), Ad (id, title, videoUrl, budgetSats, spentSats default 0, rewardSats int, active boolean), AdWatch (id, userId, adId, earnedSats, watchedAt). Run prisma migrate dev. Create a /utils/lnd.js axios client that reads LND_REST_HOST and LND_MACAROON from env and sets the Grpc-Metadata-Macaroon header with httpsAgent rejectUnauthorized false for dev. Create a basic index.js that starts the server on PORT 4000.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-coral">B2</div>
+      <span class="card-title">Auth Routes</span>
+      <span class="badge badge-coral">Hour 2</span>
+    </div>
+    <div class="prompt-label">Prompt</div>
+    <div class="prompt-block">
+Add authentication to the SatsLearn Express backend. Create /routes/auth.js with these endpoints: POST /api/auth/register — accepts email, username, password, role (LEARNER/CREATOR/ADVERTISER), hashes password with bcrypt rounds 10, creates user in DB, returns JWT. POST /api/auth/login — validates credentials, returns JWT with userId and role in payload. Create a middleware /middleware/auth.js that verifies JWT from Authorization Bearer header and attaches req.user. Create /middleware/requireRole.js that takes a role string and returns 403 if req.user.role doesn't match. Add GET /api/auth/me that returns the current user's profile including balanceSats. All error responses use { error: 'message' } format.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-coral">B3</div>
+      <span class="card-title">Video + Payment Routes</span>
+      <span class="badge badge-coral">Hour 3</span>
+    </div>
+    <div class="prompt-label">Prompt</div>
+    <div class="prompt-block">
+Add video and payment routes to SatsLearn. Create /routes/videos.js with: GET /api/videos — list all videos with creator username, priceSats, isFree. GET /api/videos/:id — single video metadata (never return url if paid and user hasn't purchased). POST /api/videos — protected, CREATOR only, accepts title, description, priceSats, isFree, courseId, saves uploaded file URL. POST /api/videos/:id/purchase — creates a LND invoice using lnd.post('/v1/invoices', { value: video.priceSats, memo: 'SatsLearn: ' + title, expiry: 600 }), saves Purchase to DB with settled false, returns { payment_request, r_hash }. GET /api/invoices/:r_hash/status — polls lnd.get('/v1/invoice/' + r_hash), if data.settled is true and Purchase not yet settled: calculate creatorCut as 90% of paidSats, platformCut as 10%, update creator's balanceSats += creatorCut, set purchase.settled = true, return { settled: true, videoUrl }. GET /api/videos/:id/access — returns video URL only if user has a settled purchase for that video OR video.isFree is true.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-coral">B4</div>
+      <span class="card-title">Ads Engine Routes</span>
+      <span class="badge badge-coral">Hour 4</span>
+    </div>
+    <div class="prompt-label">Prompt</div>
+    <div class="prompt-block">
+Add the ads system to SatsLearn. Create /routes/ads.js with: POST /api/ads — ADVERTISER only, creates an Ad with title, videoUrl, budgetSats, rewardSats. For the hackathon, budget deposit is simulated (just save budgetSats to DB). GET /api/ads/next — returns a random active Ad where spentSats + rewardSats is less than or equal to budgetSats. POST /api/ads/:id/watched — called after user watches the ad video to completion: check the user hasn't watched this ad in the last 24 hours (query AdWatch), if not: create AdWatch record, increment Ad.spentSats by rewardSats, increment user's balanceSats by rewardSats, return { earned: rewardSats, newBalance: user.balanceSats }. GET /api/wallet/balance — returns req.user.balanceSats. POST /api/wallet/withdraw — creator submits a lightning payment_request from their own wallet, backend calls lnd.post('/v1/channels/transactions', { payment_request }), deducts amount from balanceSats first, returns payment_hash. Use a DB transaction for the withdrawal to prevent double-spend.
+    </div>
+  </div>
+</div>
+
+<!-- FRONTEND PROMPTS -->
+<div class="section">
+  <p class="section-label">05 — UI Prompts</p>
+  <h2 class="section-title">Frontend Prompts</h2>
+  <p class="section-desc">React + Vite + Tailwind. Dark theme, Bitcoin orange accents.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-purple">F1</div>
+      <span class="card-title">App Shell + Auth</span>
+      <span class="badge badge-purple">Hour 5a</span>
+    </div>
+    <div class="prompt-label">Prompt</div>
+    <div class="prompt-block">
+Create a React + Vite + Tailwind CSS frontend for SatsLearn, a Bitcoin Lightning education platform. Set up React Router with these routes: / (home/course listing), /login, /register, /learn/:videoId (video player + paywall), /earn (ad watching screen), /dashboard (creator dashboard), /wallet (balance + withdraw). Create an AuthContext that stores the JWT in localStorage and provides user object, login(token), logout() functions. Create a Navbar component showing the SatsLearn logo (⚡ in gold), navigation links, and a balance display showing the user's sats balance (fetched from GET /api/auth/me) with a ⚡ icon. Use a dark theme: bg-gray-950 for body, bg-gray-900 for cards, yellow-400 for the primary accent color. All API calls go through an axios instance in /src/api/client.js that reads VITE_API_URL from env and attaches the JWT as Authorization Bearer header from localStorage.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-purple">F2</div>
+      <span class="card-title">Course Browser + Paywall</span>
+      <span class="badge badge-purple">Hour 5b</span>
+    </div>
+    <div class="prompt-label">Prompt</div>
+    <div class="prompt-block">
+Create two React components for SatsLearn. First, a CourseBrowser page at / that fetches GET /api/videos and displays videos in a grid of cards. Each card shows: video title, creator username, price in sats (show "FREE" badge in green if isFree), and a thumbnail placeholder. Clicking a card navigates to /learn/:videoId. Second, a VideoPlayer page at /learn/:videoId. Fetch the video metadata on load. If the video is free or the user has already purchased it (GET /api/videos/:id/access returns a URL), show a standard HTML5 video player. If not purchased, show a paywall overlay with the video price in sats and a "Unlock for X sats" button. When clicked: call POST /api/videos/:id/purchase, receive the payment_request and r_hash, display the payment_request as a QR code using the qrcode.react library AND as copyable text, then start polling GET /api/invoices/:r_hash/status every 2 seconds. When settled is true, stop polling, show a success animation, and load the video URL into the player.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-purple">F3</div>
+      <span class="card-title">Earn Sats Screen</span>
+      <span class="badge badge-purple">Hour 5c</span>
+    </div>
+    <div class="prompt-label">Prompt</div>
+    <div class="prompt-block">
+Create the Earn page at /earn for SatsLearn. On load, fetch GET /api/ads/next to get the next available ad. Display: a headline "Earn sats for your attention", the ad title, a video player with the ad's videoUrl (use an HTML5 video element, do not allow skipping via controls — use controlsList="nodownload nofullscreen" and hide the timeline with CSS). Show a progress bar that fills as the video plays using the timeupdate event. The "Claim X sats" button is disabled until the video's ended event fires. When the user clicks Claim, call POST /api/ads/:id/watched. Show the earned amount with a +X sats animation in yellow. Update the navbar balance display. After 3 seconds, fetch the next ad and reset the UI. If no ads are available (GET /api/ads/next returns empty), show a "No ads right now, check back soon" state. Show the user's total earned this session as a running counter at the top.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-purple">F4</div>
+      <span class="card-title">Creator Dashboard + Wallet</span>
+      <span class="badge badge-purple">Hour 5d</span>
+    </div>
+    <div class="prompt-label">Prompt</div>
+    <div class="prompt-block">
+Create two pages for SatsLearn creators. Dashboard at /dashboard: show total balance in sats (large number, yellow), total videos uploaded, total purchases made. Add a form to upload a new video with fields: title, description, price in sats (0 for free), toggle for "is this the free sample?", courseId text field, and a file input for the video. Submit to POST /api/videos. Show a list of the creator's videos with their individual purchase counts. Wallet page at /wallet: show current balance in sats and its approximate USD value (hardcode 1 sat = $0.00065 for the demo). Add a withdrawal form: textarea for the creator's Lightning invoice (payment_request), a sats amount input, and a "Withdraw" button that calls POST /api/wallet/withdraw. Show the returned payment_hash as confirmation. Also show an AdWatch earnings history section with a simple list of recent ad watches if the user has any.
+    </div>
+  </div>
+</div>
+
+<!-- 6 HOUR SCHEDULE -->
+<div class="section">
+  <p class="section-label">06 — Execution</p>
+  <h2 class="section-title">6-Hour Build Schedule</h2>
+  <p class="section-desc">Strict timebox. Cut scope before cutting quality on the core flow.</p>
+
+  <div class="hour-block">
+    <div class="hour-tag">H1<br>0:00–1:00</div>
+    <div class="hour-content">
+      <div class="hour-title">Foundation <span class="badge badge-teal">BACKEND</span></div>
+      <ul class="hour-tasks">
+        <li>npx create-express-app, install deps (prisma, jwt, bcrypt, axios, cors)</li>
+        <li>Copy Prisma schema, run migrate dev</li>
+        <li>Set up LND node in Polar, export macaroon, test GET /v1/getinfo</li>
+        <li>Create utils/lnd.js, verify connection returns node pubkey</li>
+        <li>Create React + Vite project in /client, install Tailwind</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hour-block">
+    <div class="hour-tag">H2<br>1:00–2:00</div>
+    <div class="hour-content">
+      <div class="hour-title">Auth + Wallets <span class="badge badge-teal">BACKEND</span></div>
+      <ul class="hour-tasks">
+        <li>Register + Login endpoints, JWT signing</li>
+        <li>Auth middleware, /api/auth/me endpoint</li>
+        <li>Seed 3 test users: 1 creator, 1 learner, 1 advertiser</li>
+        <li>Test all auth endpoints with Postman/Thunder Client</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hour-block">
+    <div class="hour-tag">H3<br>2:00–3:00</div>
+    <div class="hour-content">
+      <div class="hour-title">Video + Payments <span class="badge badge-teal">BACKEND</span></div>
+      <ul class="hour-tasks">
+        <li>Video CRUD routes, static file serving for uploads</li>
+        <li>POST /purchase → create LND invoice → return payment_request</li>
+        <li>GET /status/:r_hash → poll LND → split revenue on settlement</li>
+        <li>Seed 2–3 test videos with real sat prices (50–200 sats)</li>
+        <li>Test full payment flow end-to-end with Polar's built-in wallet</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hour-block">
+    <div class="hour-tag">H4<br>3:00–4:00</div>
+    <div class="hour-content">
+      <div class="hour-title">Ads Engine + Frontend Shell <span class="badge badge-coral">BOTH</span></div>
+      <ul class="hour-tasks">
+        <li>Ad routes: create, GET /next, POST /watched with 24h cooldown</li>
+        <li>Wallet withdraw endpoint</li>
+        <li>Seed 1 test ad with 10,000 sat budget, 50 sats per view</li>
+        <li>React: AuthContext, axios client, Navbar, Register/Login pages</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hour-block">
+    <div class="hour-tag">H5<br>4:00–5:00</div>
+    <div class="hour-content">
+      <div class="hour-title">Core UI <span class="badge badge-purple">FRONTEND</span></div>
+      <ul class="hour-tasks">
+        <li>CourseBrowser grid with free/paid badges</li>
+        <li>VideoPlayer + paywall with QR code (qrcode.react)</li>
+        <li>Invoice polling loop — test the full buy flow in browser</li>
+        <li>Earn page — video player, progress bar, claim button, balance update</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="hour-block">
+    <div class="hour-tag">H6<br>5:00–6:00</div>
+    <div class="hour-content">
+      <div class="hour-title">Polish + Demo Prep <span class="badge badge-gold">DEMO</span></div>
+      <ul class="hour-tasks">
+        <li>Creator dashboard + wallet page</li>
+        <li>Fix any broken flows — prioritize: watch ad → earn sats → buy video</li>
+        <li>Add 2–3 real courses from YouTube (download + serve locally)</li>
+        <li>Prepare demo script: advertiser → learner earns → learner buys → creator withdraws</li>
+        <li>Slide: "Every platform monetizes your attention. We pay you for it."</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- DEMO SCRIPT -->
+<div class="section">
+  <p class="section-label">07 — Demo</p>
+  <h2 class="section-title">Demo Script (5 min)</h2>
+  <p class="section-desc">The story is the circular sat economy. Walk the judges through one full loop.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-gold">1</div>
+        <span class="card-title">Advertiser deposits budget</span>
+      </div>
+      <p style="font-size:0.875rem;color:var(--text-muted);">Show the ad creation form. Advertiser sets budget 10,000 sats, reward 50 sats per view. "This is attention they actually pay for."</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-teal">2</div>
+        <span class="card-title">Learner watches ad, earns sats</span>
+      </div>
+      <p style="font-size:0.875rem;color:var(--text-muted);">Open Earn page as learner. Watch ad to completion. Show balance tick up +50 sats in real time. "No ad-blocker incentive — you're getting paid."</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-purple">3</div>
+        <span class="card-title">Learner buys a course</span>
+      </div>
+      <p style="font-size:0.875rem;color:var(--text-muted);">Browse courses, click a paid video, show the Lightning invoice QR. Pay using Polar's built-in wallet. Video unlocks instantly. "Zero payment processor, instant settlement."</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-coral">4</div>
+        <span class="card-title">Creator withdraws earnings</span>
+      </div>
+      <p style="font-size:0.875rem;color:var(--text-muted);">Switch to creator account. Show dashboard with earnings. Paste a Lightning invoice, hit withdraw. Show payment_hash. "Creator gets paid in seconds, not 30 days."</p>
+    </div>
+  </div>
+
+  <div class="card card-gold" style="margin-top:1rem;">
+    <div class="card-header">
+      <div class="card-icon icon-gold">⚡</div>
+      <span class="card-title">Closing line for judges</span>
+    </div>
+    <p style="font-size:1rem;line-height:1.8;color:var(--text);">
+      <em>"Every platform today monetizes your attention and keeps the money. SatsLearn routes that value directly to you and to the people who teach you — in Bitcoin, in seconds, with no middleman bank. That's the Lightning Network doing what it was built for."</em>
+    </p>
+  </div>
+</div>
+
+<!-- SCOPE CUTS -->
+<div class="section">
+  <p class="section-label">08 — Risk</p>
+  <h2 class="section-title">Scope Cuts if You're Behind</h2>
+  <p class="section-desc">In priority order — cut the bottom first.</p>
+
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Cut to</th><th>Time saved</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Video file upload</td>
+        <td>Hardcode a public .mp4 URL in seed data</td>
+        <td>~30 min</td>
+      </tr>
+      <tr>
+        <td>Creator dashboard</td>
+        <td>Just show balance in /api/auth/me response in console</td>
+        <td>~30 min</td>
+      </tr>
+      <tr>
+        <td>24h ad cooldown</td>
+        <td>Allow unlimited ad watches per session</td>
+        <td>~15 min</td>
+      </tr>
+      <tr>
+        <td>Withdrawal flow</td>
+        <td>Show balance only — skip the actual LND payment send</td>
+        <td>~20 min</td>
+      </tr>
+      <tr>
+        <td>Register page</td>
+        <td>Seed all 3 user types, demo with pre-created accounts</td>
+        <td>~20 min</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div><!-- /container -->
+</body>
+</html>
