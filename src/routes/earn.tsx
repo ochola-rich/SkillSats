@@ -8,7 +8,10 @@ export const Route = createFileRoute("/earn")({
   head: () => ({
     meta: [
       { title: "SatsLearn — Earn Sats" },
-      { name: "description", content: "Watch curated ads, learn, and stack sats instantly via Lightning." },
+      {
+        name: "description",
+        content: "Watch curated ads, learn, and stack sats instantly via Lightning.",
+      },
     ],
   }),
   component: EarnPage,
@@ -21,7 +24,11 @@ function EarnPage() {
   const [progress, setProgress] = useState(0);
   const [notification, setNotification] = useState<{ message: string; sats: number } | null>(null);
 
-  const { data: currentAd, isLoading, refetch: refetchAd } = useQuery({
+  const {
+    data: currentAd,
+    isLoading,
+    refetch: refetchAd,
+  } = useQuery({
     queryKey: ["nextAd"],
     queryFn: () => getNextAd(),
     refetchOnWindowFocus: false,
@@ -29,11 +36,11 @@ function EarnPage() {
 
   const markWatchedMutation = useMutation({
     mutationFn: (adId: string) => markAdWatched({ data: { adId } }),
-    onSuccess: (data) => {
+    onSuccess: (data: { earned: number; newBalance: number }) => {
       setSessionEarned((prev) => prev + data.earned);
       refreshUser();
       setNotification({ message: "Sats earned!", sats: data.earned });
-      
+
       setTimeout(() => {
         setNotification(null);
       }, 2000);
@@ -44,13 +51,13 @@ function EarnPage() {
         refetchAd();
       }, 3000);
     },
-    onError: (error: any) => {
-      if (error.message === 'COOLDOWN_ACTIVE') {
+    onError: (error: Error) => {
+      if (error.message === "COOLDOWN_ACTIVE") {
         alert("You already watched this ad recently. Try another one!");
       } else {
         alert("Failed to claim reward: " + error.message);
       }
-    }
+    },
   });
 
   const handleEnded = () => {
@@ -85,7 +92,7 @@ function EarnPage() {
         <span className="material-symbols-outlined text-6xl text-gray-600 mb-4">coffee</span>
         <h2 className="text-2xl font-bold mb-2">No ads right now</h2>
         <p className="text-gray-400 mb-6">Check back soon for more opportunities to earn!</p>
-        <button 
+        <button
           onClick={() => refetchAd()}
           className="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-lg transition-colors"
         >
@@ -111,7 +118,7 @@ function EarnPage() {
 
         <div className="bg-[#111118] border border-white/10 rounded-2xl p-6 mb-8">
           <h3 className="text-xl font-bold mb-4">{currentAd.title}</h3>
-          
+
           <div className="relative mb-4">
             <video
               key={currentAd.id}
@@ -124,11 +131,11 @@ function EarnPage() {
               className="w-full rounded-lg ad-video"
               autoPlay
             />
-            
+
             {/* Custom Progress Bar */}
             <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-800 rounded-b-lg overflow-hidden">
-              <div 
-                className="h-full bg-[#F7B500] transition-all duration-300" 
+              <div
+                className="h-full bg-[#F7B500] transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -143,10 +150,10 @@ function EarnPage() {
                 : "bg-gray-700 text-gray-400 cursor-not-allowed"
             }`}
           >
-            {markWatchedMutation.isPending 
-              ? "Claiming..." 
-              : videoEnded 
-                ? `Claim ⚡ ${currentAd.rewardSats * 0.6} sats` 
+            {markWatchedMutation.isPending
+              ? "Claiming..."
+              : videoEnded
+                ? `Claim ⚡ ${currentAd.rewardSats * 0.6} sats`
                 : "Watch to end to claim"}
           </button>
         </div>

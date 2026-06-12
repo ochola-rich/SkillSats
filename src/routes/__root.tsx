@@ -78,7 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "SatsLearn — Learn anything. Pay in sats." },
-      { name: "description", content: "Peer-to-peer education marketplace powered by Bitcoin Lightning." },
+      {
+        name: "description",
+        content: "Peer-to-peer education marketplace powered by Bitcoin Lightning.",
+      },
       { property: "og:title", content: "SatsLearn" },
       { property: "og:description", content: "Learn anything. Pay in sats." },
       { property: "og:type", content: "website" },
@@ -205,7 +208,9 @@ function ScreenSwitcher() {
           key={s.to}
           to={s.to}
           className="rounded-lg px-3 py-1 text-xs font-medium text-[#374D17] hover:bg-[#EAF3DE]"
-          activeProps={{ className: "rounded-lg px-3 py-1 text-xs font-semibold bg-[#3c6700] text-white" }}
+          activeProps={{
+            className: "rounded-lg px-3 py-1 text-xs font-semibold bg-[#3c6700] text-white",
+          }}
           activeOptions={{ exact: true }}
         >
           {s.label}

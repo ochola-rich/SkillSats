@@ -1,52 +1,50 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { getMe } from '../server/auth'
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { getMe } from "../server/auth";
 
 interface User {
-  id: string
-  username: string
-  email: string
-  role: string
-  balanceSats: number
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  balanceSats: number;
 }
 
 interface AuthContextType {
-  user: User | null
-  loading: boolean
-  refreshUser: () => Promise<void>
+  user: User | null;
+  loading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
     try {
-      const userData = await getMe()
-      setUser(userData as User)
+      const userData = await getMe();
+      setUser(userData as User);
     } catch (error) {
-      setUser(null)
+      setUser(null);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    refreshUser()
-  }, [])
+    refreshUser();
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser }}>
-      {children}
-    </AuthContext.Provider>
-  )
+    <AuthContext.Provider value={{ user, loading, refreshUser }}>{children}</AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }
