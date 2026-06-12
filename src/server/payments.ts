@@ -1,14 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
-import { db } from "../lib/db";
-import { requireAuth } from "../lib/auth";
-import { lnd, b64ToHex } from "../lib/lnd";
+import { db, runSerializable } from "../lib/db.server";
+import { requireAuth } from "../lib/auth.server";
+import { b64ToHex, getLndClient } from "../lib/lnd.server";
+import { calculateCreatorRevenue } from "../lib/domain";
+import { invoiceStatusSchema, videoIdSchema } from "../lib/schemas";
 
 // --- PURCHASE VIDEO ---
 // Creates an LND invoice for the video price and saves a pending Purchase record.
 // Returns the payment_request (for QR display) and r_hash (for polling).
 export const purchaseVideo = createServerFn({ method: "POST" })
-  .validator((data: { videoId: string }) => data)
-  .handler(async ({ data }: { data: { videoId: string } }) => {
+  .validator(videoIdSchema)
+  .handler(async ({ data }) => {
     const user = await requireAuth();
     const video = await db.video.findUnique({ where: { id: data.videoId } });
     if (!video) throw new Error("VIDEO_NOT_FOUND");
@@ -21,9 +23,9 @@ export const purchaseVideo = createServerFn({ method: "POST" })
     if (existing) throw new Error("ALREADY_PURCHASED");
 
     // Create LND invoice
-    const { data: invoiceData } = await lnd.post("/v1/invoices", {
+    const { data: invoiceData } = await getLndClient().post("/v1/invoices", {
       value: video.priceSats,
-      memo: `SatsLearn: ${video.title}`,
+      memo: `SkillSats: ${video.title}`,
       expiry: 600, // 10-minute expiry
     });
 
@@ -56,12 +58,13 @@ export const purchaseVideo = createServerFn({ method: "POST" })
 //   - Creator receives 90% of paidSats (credited to their custodial balanceSats)
 //   - Platform keeps 10% (no DB record needed for hackathon — just don't credit it)
 export const checkInvoiceStatus = createServerFn({ method: "GET" })
-  .validator((data: { rHash: string }) => data)
-  .handler(async ({ data }: { data: { rHash: string } }) => {
+  .validator(invoiceStatusSchema)
+  .handler(async ({ data }) => {
+    const user = await requireAuth();
     // Look up the purchase by rHash
     const purchase = await db.purchase.findFirst({
-      where: { rHash: data.rHash },
-      include: { video: { include: { creator: true } } },
+      where: { rHash: data.rHash, userId: user.id },
+      include: { video: true },
     });
     if (!purchase) throw new Error("PURCHASE_NOT_FOUND");
 
@@ -71,24 +74,21 @@ export const checkInvoiceStatus = createServerFn({ method: "GET" })
     }
 
     // Poll LND for settlement status
-    const { data: invoiceData } = await lnd.get(`/v1/invoice/${data.rHash}`);
+    const { data: invoiceData } = await getLndClient().get(`/v1/invoice/${data.rHash}`);
 
     if (invoiceData.settled) {
-      const total = purchase.paidSats;
-      const creatorCut = Math.floor(total * 0.9); // 90% to creator
-      // platformCut = total - creatorCut          // 10% stays in node (not credited)
-
-      // Use a Prisma transaction to atomically: credit creator + mark settled
-      await db.$transaction([
-        db.user.update({
-          where: { id: purchase.video.creatorId },
-          data: { balanceSats: { increment: creatorCut } },
-        }),
-        db.purchase.update({
-          where: { id: purchase.id },
+      await runSerializable(async (transaction) => {
+        const result = await transaction.purchase.updateMany({
+          where: { id: purchase.id, settled: false },
           data: { settled: true },
-        }),
-      ]);
+        });
+        if (result.count === 0) return;
+
+        await transaction.user.update({
+          where: { id: purchase.video.creatorId },
+          data: { balanceSats: { increment: calculateCreatorRevenue(purchase.paidSats) } },
+        });
+      });
 
       return { settled: true, videoUrl: purchase.video.url };
     }

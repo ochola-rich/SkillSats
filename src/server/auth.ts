@@ -1,59 +1,48 @@
 import { createServerFn } from "@tanstack/react-start";
 import bcrypt from "bcryptjs";
-import { db } from "../lib/db";
-import { signToken, setAuthCookie, clearAuthCookie, requireAuth } from "../lib/auth";
+import { db, isUniqueConstraintError } from "../lib/db.server";
+import { signToken, setAuthCookie, clearAuthCookie, requireAuth } from "../lib/auth.server";
+import { loginSchema, registerSchema } from "../lib/schemas";
 
 // --- REGISTER ---
 export const registerUser = createServerFn({ method: "POST" })
-  .validator(
-    (data: {
-      email: string;
-      username: string;
-      password: string;
-      role: "LEARNER" | "CREATOR" | "ADVERTISER";
-    }) => data,
-  )
-  .handler(
-    async ({
-      data,
-    }: {
-      data: {
-        email: string;
-        username: string;
-        password: string;
-        role: "LEARNER" | "CREATOR" | "ADVERTISER";
-      };
-    }) => {
-      const existing = await db.user.findFirst({
-        where: { OR: [{ email: data.email }, { username: data.username }] },
-      });
-      if (existing) throw new Error("EMAIL_OR_USERNAME_TAKEN");
+  .validator(registerSchema)
+  .handler(async ({ data }) => {
+    const existing = await db.user.findFirst({
+      where: { OR: [{ email: data.email }, { username: data.username }] },
+    });
+    if (existing) throw new Error("EMAIL_OR_USERNAME_TAKEN");
 
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-      const user = await db.user.create({
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+    const user = await db.user
+      .create({
         data: {
           email: data.email,
           username: data.username,
           password: hashedPassword,
           role: data.role,
         },
+      })
+      .catch((error: unknown) => {
+        if (isUniqueConstraintError(error)) throw new Error("EMAIL_OR_USERNAME_TAKEN");
+        throw error;
       });
 
-      const token = signToken({ userId: user.id, role: user.role, username: user.username });
-      setAuthCookie(token);
-      return {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        balanceSats: user.balanceSats,
-      };
-    },
-  );
+    const token = signToken({ userId: user.id, role: user.role, username: user.username });
+    setAuthCookie(token);
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      balanceSats: user.balanceSats,
+    };
+  });
 
 // --- LOGIN ---
 export const loginUser = createServerFn({ method: "POST" })
-  .validator((data: { email: string; password: string }) => data)
-  .handler(async ({ data }: { data: { email: string; password: string } }) => {
+  .validator(loginSchema)
+  .handler(async ({ data }) => {
     const user = await db.user.findUnique({ where: { email: data.email } });
     if (!user) throw new Error("INVALID_CREDENTIALS");
 
@@ -62,7 +51,13 @@ export const loginUser = createServerFn({ method: "POST" })
 
     const token = signToken({ userId: user.id, role: user.role, username: user.username });
     setAuthCookie(token);
-    return { id: user.id, username: user.username, role: user.role, balanceSats: user.balanceSats };
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      balanceSats: user.balanceSats,
+    };
   });
 
 // --- LOGOUT ---

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { db } from "../lib/db";
-import { requireAuth, requireRole } from "../lib/auth";
+import { db } from "../lib/db.server";
+import { requireAuth, requireRole } from "../lib/auth.server";
+import { createVideoSchema, videoIdSchema } from "../lib/schemas";
 
 // --- LIST ALL VIDEOS (public) ---
 // Returns all videos. The `url` field is never included here — only accessible
@@ -18,15 +19,15 @@ export const listVideos = createServerFn({ method: "GET" }).handler(async () => 
     isFree: v.isFree,
     courseId: v.courseId,
     creatorUsername: v.creator.username,
-    createdAt: v.createdAt,
+    createdAt: v.createdAt.toISOString(),
   }));
 });
 
 // --- GET SINGLE VIDEO METADATA (public) ---
 // Returns metadata only. Never exposes the video URL here.
 export const getVideoMeta = createServerFn({ method: "GET" })
-  .validator((data: { videoId: string }) => data)
-  .handler(async ({ data }: { data: { videoId: string } }) => {
+  .validator(videoIdSchema)
+  .handler(async ({ data }) => {
     const video = await db.video.findUnique({
       where: { id: data.videoId },
       include: { creator: { select: { username: true } } },
@@ -40,7 +41,7 @@ export const getVideoMeta = createServerFn({ method: "GET" })
       isFree: video.isFree,
       courseId: video.courseId,
       creatorUsername: video.creator.username,
-      createdAt: video.createdAt,
+      createdAt: video.createdAt.toISOString(),
     };
   });
 
@@ -48,44 +49,22 @@ export const getVideoMeta = createServerFn({ method: "GET" })
 // For the hackathon, `url` is a string (a public CDN URL or a hardcoded local path).
 // File upload handling is out of scope — seed real URLs in the database.
 export const createVideo = createServerFn({ method: "POST" })
-  .validator(
-    (data: {
-      title: string;
-      description: string;
-      url: string;
-      priceSats: number;
-      isFree: boolean;
-      courseId: string;
-    }) => data,
-  )
-  .handler(
-    async ({
-      data,
-    }: {
+  .validator(createVideoSchema)
+  .handler(async ({ data }) => {
+    const creator = await requireRole("CREATOR");
+    const video = await db.video.create({
       data: {
-        title: string;
-        description: string;
-        url: string;
-        priceSats: number;
-        isFree: boolean;
-        courseId: string;
-      };
-    }) => {
-      const creator = await requireRole("CREATOR");
-      const video = await db.video.create({
-        data: {
-          title: data.title,
-          description: data.description,
-          url: data.url,
-          priceSats: data.isFree ? 0 : data.priceSats,
-          isFree: data.isFree,
-          courseId: data.courseId,
-          creatorId: creator.id,
-        },
-      });
-      return { id: video.id, title: video.title };
-    },
-  );
+        title: data.title,
+        description: data.description,
+        url: data.url,
+        priceSats: data.isFree ? 0 : data.priceSats,
+        isFree: data.isFree,
+        courseId: data.courseId,
+        creatorId: creator.id,
+      },
+    });
+    return { id: video.id, title: video.title };
+  });
 
 // --- GET VIDEO ACCESS (authenticated) ---
 // Returns the video URL only if:
@@ -93,9 +72,8 @@ export const createVideo = createServerFn({ method: "POST" })
 //   (b) the authenticated user has a settled Purchase for this video.
 // Returns { hasAccess: false } if neither condition is met.
 export const getVideoAccess = createServerFn({ method: "GET" })
-  .validator((data: { videoId: string }) => data)
-  .handler(async ({ data }: { data: { videoId: string } }) => {
-    const user = await requireAuth();
+  .validator(videoIdSchema)
+  .handler(async ({ data }) => {
     const video = await db.video.findUnique({ where: { id: data.videoId } });
     if (!video) throw new Error("VIDEO_NOT_FOUND");
 
@@ -103,6 +81,7 @@ export const getVideoAccess = createServerFn({ method: "GET" })
       return { hasAccess: true, videoUrl: video.url };
     }
 
+    const user = await requireAuth();
     const purchase = await db.purchase.findFirst({
       where: { userId: user.id, videoId: data.videoId, settled: true },
     });

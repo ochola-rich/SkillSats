@@ -9,7 +9,7 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("Seeding SatsLearn database...");
+  console.log("Seeding SkillSats database...");
 
   // Clear existing data (order matters for FK constraints)
   await prisma.adWatch.deleteMany();

@@ -1,20 +1,24 @@
 import axios from "axios";
-import https from "https";
+import https from "node:https";
 
-if (!process.env.LND_REST_HOST || !process.env.LND_MACAROON) {
-  console.warn("[LND] Warning: LND_REST_HOST or LND_MACAROON env vars are missing.");
+export function getLndClient() {
+  const baseURL = process.env.LND_REST_HOST;
+  const macaroon = process.env.LND_MACAROON;
+  if (!baseURL || !macaroon) throw new Error("LND_NOT_CONFIGURED");
+
+  return axios.create({
+    baseURL,
+    headers: {
+      "Grpc-Metadata-Macaroon": macaroon,
+      "Content-Type": "application/json",
+    },
+    httpsAgent:
+      process.env.NODE_ENV === "production"
+        ? undefined
+        : new https.Agent({ rejectUnauthorized: false }),
+    timeout: 10_000,
+  });
 }
-
-export const lnd = axios.create({
-  baseURL: process.env.LND_REST_HOST,
-  headers: {
-    "Grpc-Metadata-Macaroon": process.env.LND_MACAROON ?? "",
-    "Content-Type": "application/json",
-  },
-  // Skip TLS cert verification for local Polar dev node only
-  httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-  timeout: 10000,
-});
 
 // LND API reference used in this project:
 // POST /v1/invoices               → create invoice (returns payment_request + r_hash)
@@ -23,6 +27,7 @@ export const lnd = axios.create({
 // GET  /v1/getinfo               → node health check
 
 export async function lndHealthCheck() {
+  const lnd = getLndClient();
   const { data } = await lnd.get("/v1/getinfo");
   return { alias: data.alias, pubkey: data.identity_pubkey, synced: data.synced_to_chain };
 }

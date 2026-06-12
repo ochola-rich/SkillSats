@@ -37,6 +37,9 @@ model Video {
   creator     User       @relation(fields: [creatorId], references: [id])
   purchases   Purchase[]
   createdAt   DateTime   @default(now())
+
+  @@index([creatorId])
+  @@index([courseId])
 }
 
 model Purchase {
@@ -45,11 +48,13 @@ model Purchase {
   videoId   String
   paidSats  Int
   invoice   String
-  rHash     String
+  rHash     String   @unique
   settled   Boolean  @default(false)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
   video     Video    @relation(fields: [videoId], references: [id])
+
+  @@index([userId, videoId, settled])
 }
 
 model Ad {
@@ -71,4 +76,6 @@ model AdWatch {
   watchedAt  DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id])
   ad         Ad       @relation(fields: [adId], references: [id])
+
+  @@index([userId, adId, watchedAt])
 }
