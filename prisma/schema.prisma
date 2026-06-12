@@ -1,9 +1,5 @@
-// SkillSats — Prisma Schema
-// Peer-to-peer education marketplace powered by Bitcoin Lightning Network
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -36,7 +32,7 @@ model Video {
   url         String
   priceSats   Int
   isFree      Boolean    @default(false)
-  courseId     String
+  courseId    String
   creatorId   String
   creator     User       @relation(fields: [creatorId], references: [id])
   purchases   Purchase[]
