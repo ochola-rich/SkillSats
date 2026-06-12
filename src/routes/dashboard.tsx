@@ -1,332 +1,206 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { apiClient } from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+
+import { useAuth } from "../hooks/use-auth";
+import { getErrorMessage } from "../lib/errors";
+import { createVideo, listMyVideos } from "../server/videos";
+import { getBalance } from "../server/wallet";
+
+type CreatorVideo = Awaited<ReturnType<typeof listMyVideos>>[number];
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({
-    meta: [
-      { title: "SkillSats Creator Dashboard" },
-      { name: "description", content: "Track your courses, earnings, and learners." },
-    ],
-  }),
-  component: DashboardComponent,
+  component: DashboardPage,
+  head: () => ({ meta: [{ title: "Creator dashboard - SkillSats" }] }),
 });
 
-interface VideoSummary {
-  id: string;
-  title: string;
-  description: string;
-  priceSats: number;
-  isFree: boolean;
-  courseId: string;
-  creatorId: string;
-  creatorUsername: string;
-  createdAt: string;
-}
-
-function DashboardComponent() {
-  const { user, refreshUser } = useAuth();
-  const [videos, setVideos] = useState<VideoSummary[]>([]);
+function DashboardPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const loadBalance = useServerFn(getBalance);
+  const loadVideos = useServerFn(listMyVideos);
+  const publishVideo = useServerFn(createVideo);
+  const [videos, setVideos] = useState<CreatorVideo[]>([]);
+  const [balance, setBalance] = useState({ balanceSats: 0, approximateUSD: "0.00" });
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-
-  // Form states
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priceSats, setPriceSats] = useState<number>(0);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [priceSats, setPriceSats] = useState(0);
   const [isFree, setIsFree] = useState(false);
   const [courseId, setCourseId] = useState("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
 
-  const fetchVideos = async () => {
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await apiClient.get<VideoSummary[]>("/api/videos");
-      setVideos(res.data);
-    } catch (err: any) {
-      console.error(err);
-      setError("Failed to fetch videos.");
+      const [nextBalance, nextVideos] = await Promise.all([loadBalance(), loadVideos()]);
+      setBalance(nextBalance);
+      setVideos(nextVideos);
+    } catch (caught) {
+      setError(getErrorMessage(caught, "Unable to load the creator dashboard."));
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadBalance, loadVideos]);
 
   useEffect(() => {
-    fetchVideos();
-  }, []);
-
-  // Filter creator's videos
-  const creatorVideos = videos.filter(
-    (v) => v.creatorId === user?.id || v.creatorUsername === user?.username,
-  );
-
-  // Helper to simulate stable purchase counts for demo
-  const getMockPurchaseCount = (videoId: string) => {
-    if (typeof window !== "undefined" && localStorage.getItem(`uploaded_${videoId}`)) {
-      return parseInt(localStorage.getItem(`purchases_${videoId}`) || "0", 10);
-    }
-    // Stable hash based on videoId characters
-    let hash = 0;
-    for (let i = 0; i < videoId.length; i++) {
-      hash = videoId.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return Math.abs(hash % 25) + 2; // Returns a number between 2 and 26
-  };
-
-  const totalPurchases = creatorVideos.reduce((sum, v) => sum + getMockPurchaseCount(v.id), 0);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setVideoFile(e.target.files[0]);
-    }
-  };
-
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccessMsg("");
-
-    if (!videoFile) {
-      setError("Please select a video file to upload.");
+    if (user?.role !== "CREATOR") {
+      void navigate({ to: "/", replace: true });
       return;
     }
+    void loadDashboard();
+  }, [loadDashboard, navigate, user?.role]);
 
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("priceSats", String(isFree ? 0 : priceSats));
-    formData.append("isFree", String(isFree));
-    formData.append("courseId", courseId);
-    formData.append("file", videoFile);
+  const purchaseCount = useMemo(
+    () => videos.reduce((total, video) => total + video.purchaseCount, 0),
+    [videos],
+  );
 
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+    setMessage("");
     try {
-      const res = await apiClient.post<VideoSummary>("/api/videos", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      await publishVideo({
+        data: { title, description, url: videoUrl, priceSats, isFree, courseId },
       });
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem(`uploaded_${res.data.id}`, "true");
-        localStorage.setItem(`purchases_${res.data.id}`, "0");
-      }
-
-      setSuccessMsg("Video uploaded successfully!");
-      // Reset form
       setTitle("");
       setDescription("");
+      setVideoUrl("");
       setPriceSats(0);
       setIsFree(false);
       setCourseId("");
-      setVideoFile(null);
-      // Reset input element
-      const fileInput = document.getElementById("video-file") as HTMLInputElement;
-      if (fileInput) fileInput.value = "";
-
-      // Refresh list
-      await fetchVideos();
-      await refreshUser();
-    } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.error || "Failed to upload video.");
+      setMessage("Video published.");
+      await loadDashboard();
+    } catch (caught) {
+      setError(getErrorMessage(caught, "Unable to publish this video."));
     } finally {
-      setUploading(false);
+      setSubmitting(false);
     }
   };
 
-  if (user?.role !== "CREATOR") {
-    return (
-      <div className="max-w-md mx-auto my-12 p-6 bg-gray-900 border border-gray-800 rounded-lg text-center space-y-4">
-        <span className="text-3xl">🚫</span>
-        <h3 className="text-lg font-bold text-gray-100">Creator Account Required</h3>
-        <p className="text-sm text-gray-400">
-          Only users registered with the **CREATOR** role can access this page to upload courses.
-        </p>
-      </div>
-    );
-  }
+  if (user?.role !== "CREATOR") return <p className="text-center text-gray-400">Redirecting...</p>;
 
   return (
     <div className="space-y-8">
-      {/* Creator stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-            Creator Balance
-          </span>
-          <p className="text-3xl font-bold text-yellow-400 font-mono">
-            ⚡ {(user?.balanceSats ?? 0).toLocaleString()} sats
-          </p>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-            Videos Uploaded
-          </span>
-          <p className="text-3xl font-bold text-gray-100 font-mono">{creatorVideos.length}</p>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-            Total Purchases
-          </span>
-          <p className="text-3xl font-bold text-gray-100 font-mono">{totalPurchases}</p>
-        </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Stat
+          label="Creator balance"
+          value={`${balance.balanceSats.toLocaleString()} sats (~$${balance.approximateUSD})`}
+        />
+        <Stat label="Videos uploaded" value={String(videos.length)} />
+        <Stat label="Settled purchases" value={String(purchaseCount)} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Upload Form */}
-        <div className="lg:col-span-1 bg-gray-900 border border-gray-800 p-6 rounded-lg h-fit space-y-6">
-          <h3 className="text-lg font-bold text-gray-100 border-b border-gray-800 pb-3">
-            Upload New Video
-          </h3>
-
-          {error && (
-            <div className="bg-red-950/20 border border-red-800 text-red-200 p-3 rounded text-xs">
-              {error}
-            </div>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <section className="rounded-xl border border-white/10 bg-[#111118] p-6">
+          <h2 className="text-xl font-bold">Publish a video</h2>
+          {message && (
+            <p className="mt-4 rounded bg-green-500/10 p-3 text-sm text-green-300">{message}</p>
           )}
-          {successMsg && (
-            <div className="bg-green-950/20 border border-green-800 text-green-200 p-3 rounded text-xs">
-              {successMsg}
-            </div>
-          )}
-
-          <form onSubmit={handleUpload} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-sm"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
-                Description
-              </label>
+          {error && <p className="mt-4 rounded bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <Field label="Title">
+              <input value={title} onChange={(event) => setTitle(event.target.value)} required />
+            </Field>
+            <Field label="Description">
               <textarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-sm resize-none"
+                onChange={(event) => setDescription(event.target.value)}
+                rows={4}
                 required
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
-                Course ID
-              </label>
+            </Field>
+            <Field label="Video URL - CDN link or local path">
               <input
-                type="text"
-                value={courseId}
-                onChange={(e) => setCourseId(e.target.value)}
-                placeholder="e.g. bitcoin-basics"
-                className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-sm"
+                value={videoUrl}
+                onChange={(event) => setVideoUrl(event.target.value)}
                 required
               />
-            </div>
-
-            <div className="flex items-center gap-3">
+            </Field>
+            <Field label="Course ID">
+              <input
+                value={courseId}
+                onChange={(event) => setCourseId(event.target.value)}
+                placeholder="course-lightning-basics"
+                required
+              />
+            </Field>
+            <Field label="Price in sats">
+              <input
+                type="number"
+                min={isFree ? 0 : 1}
+                disabled={isFree}
+                value={isFree ? 0 : priceSats}
+                onChange={(event) => setPriceSats(Number(event.target.value))}
+                required
+              />
+            </Field>
+            <label className="flex items-center gap-2 text-sm text-gray-300">
               <input
                 type="checkbox"
-                id="is-free"
                 checked={isFree}
-                onChange={(e) => setIsFree(e.target.checked)}
-                className="w-4 h-4 bg-gray-950 border-gray-800 rounded text-yellow-400 focus:ring-yellow-400"
+                onChange={(event) => setIsFree(event.target.checked)}
               />
-              <label
-                htmlFor="is-free"
-                className="text-xs font-bold text-gray-300 uppercase cursor-pointer"
-              >
-                Is this a free sample?
-              </label>
-            </div>
-
-            {!isFree && (
-              <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
-                  Price in Sats
-                </label>
-                <input
-                  type="number"
-                  value={priceSats}
-                  onChange={(e) => setPriceSats(Math.max(0, parseInt(e.target.value) || 0))}
-                  min={0}
-                  className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-sm font-mono"
-                  required
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
-                Video File
-              </label>
-              <input
-                type="file"
-                id="video-file"
-                accept="video/*"
-                onChange={handleFileChange}
-                className="w-full text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-800 file:text-gray-250 hover:file:bg-gray-750 cursor-pointer file:cursor-pointer"
-                required
-              />
-            </div>
-
+              This is a free sample
+            </label>
             <button
               type="submit"
-              disabled={uploading}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-950 font-bold py-2.5 px-4 rounded transition-all disabled:opacity-50 text-sm cursor-pointer"
+              disabled={submitting}
+              className="w-full rounded-md bg-yellow-400 px-4 py-2 font-bold text-black disabled:opacity-50"
             >
-              {uploading ? "Uploading Video..." : "Upload Video"}
+              {submitting ? "Publishing..." : "Publish video"}
             </button>
           </form>
-        </div>
+        </section>
 
-        {/* Video List */}
-        <div className="lg:col-span-2 bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-6">
-          <h3 className="text-lg font-bold text-gray-100 border-b border-gray-800 pb-3">
-            My Uploads
-          </h3>
-
+        <section className="rounded-xl border border-white/10 bg-[#111118] p-6">
+          <h2 className="text-xl font-bold">My videos</h2>
           {loading ? (
-            <div className="text-center py-8 text-gray-400 text-sm">Loading creator videos...</div>
-          ) : creatorVideos.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 text-sm">
-              You haven't uploaded any videos yet.
-            </div>
+            <p className="py-10 text-center text-gray-400">Loading videos...</p>
+          ) : videos.length === 0 ? (
+            <p className="py-10 text-center text-gray-400">No videos published yet.</p>
           ) : (
-            <div className="space-y-4">
-              {creatorVideos.map((video) => (
-                <div
-                  key={video.id}
-                  className="flex items-center justify-between p-4 bg-gray-950 border border-gray-850 rounded-lg hover:border-gray-800 transition-colors"
-                >
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-gray-200 text-sm">{video.title}</h4>
-                    <div className="flex gap-4 text-xs text-gray-400 font-mono">
-                      <span>Price: {video.isFree ? "Free" : `${video.priceSats} sats`}</span>
-                      <span>Course: {video.courseId}</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs text-gray-400 font-medium">Purchases</span>
-                    <p className="text-lg font-bold text-yellow-400 font-mono">
-                      {getMockPurchaseCount(video.id)}
+            <div className="mt-4 divide-y divide-white/10">
+              {videos.map((video) => (
+                <div key={video.id} className="flex items-center justify-between gap-4 py-4">
+                  <div>
+                    <h3 className="font-semibold">{video.title}</h3>
+                    <p className="mt-1 font-mono text-xs text-yellow-400">
+                      {video.isFree ? "FREE" : `${video.priceSats} sats`}
                     </p>
                   </div>
+                  <span className="text-sm text-gray-400">
+                    {video.purchaseCount} purchase{video.purchaseCount === 1 ? "" : "s"}
+                  </span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-[#111118] p-5">
+      <p className="text-xs font-bold uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="mt-2 font-mono text-2xl font-bold text-yellow-400">{value}</p>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="block text-sm text-gray-300">
+      {label}
+      <div className="form-control mt-1">{children}</div>
+    </label>
   );
 }

@@ -1,116 +1,112 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { apiClient } from "../api/client";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useState, type FormEvent } from "react";
+
+import { useAuth } from "../hooks/use-auth";
+import { getErrorMessage, hasErrorCode } from "../lib/errors";
+import { registerUser } from "../server/auth";
+
+type Role = "LEARNER" | "CREATOR" | "ADVERTISER";
 
 export const Route = createFileRoute("/register")({
-  head: () => ({
-    meta: [
-      { title: "SkillSats — Register" },
-      { name: "description", content: "Create a new SkillSats account" },
-    ],
-  }),
-  component: RegisterComponent,
+  component: RegisterPage,
+  head: () => ({ meta: [{ title: "Register - SkillSats" }] }),
 });
 
-function RegisterComponent() {
+function RegisterPage() {
+  const register = useServerFn(registerUser);
+  const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"LEARNER" | "CREATOR" | "ADVERTISER">("LEARNER");
+  const [role, setRole] = useState<Role>("LEARNER");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     setError("");
-    setLoading(true);
+    setSubmitting(true);
     try {
-      const response = await apiClient.post("/api/auth/register", {
-        email,
-        username,
-        password,
-        role,
-      });
-      const { token } = response.data;
-      await login(token);
-      navigate({ to: "/" });
-    } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.error || "Registration failed. Please try again.");
+      await register({ data: { email, username, password, role } });
+      await refreshUser();
+      await navigate({ to: "/" });
+    } catch (caught) {
+      setError(
+        hasErrorCode(caught, "EMAIL_OR_USERNAME_TAKEN")
+          ? "That email or username is already in use."
+          : getErrorMessage(caught, "Registration failed."),
+      );
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto my-12 p-6 bg-gray-900 border border-gray-800 rounded-lg shadow-xl">
-      <h2 className="text-2xl font-bold mb-6 text-center text-yellow-400">Join SkillSats</h2>
-
-      {error && (
-        <div className="bg-red-950/50 border border-red-800 text-red-200 p-3 rounded mb-4 text-sm">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1 text-gray-300">Username</label>
+    <div className="mx-auto my-12 max-w-md rounded-xl border border-white/10 bg-[#111118] p-6">
+      <h1 className="text-center text-2xl font-bold">Create your account</h1>
+      {error && <p className="mt-4 rounded bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <label className="block text-sm text-gray-300">
+          Username
           <input
-            type="text"
+            autoComplete="username"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-sm"
+            onChange={(event) => setUsername(event.target.value)}
+            className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0a0f] px-3 py-2"
             required
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1 text-gray-300">Email Address</label>
+        </label>
+        <label className="block text-sm text-gray-300">
+          Email
           <input
             type="email"
+            autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-sm"
+            onChange={(event) => setEmail(event.target.value)}
+            className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0a0f] px-3 py-2"
             required
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1 text-gray-300">Password</label>
+        </label>
+        <label className="block text-sm text-gray-300">
+          Password
           <input
             type="password"
+            minLength={8}
+            autoComplete="new-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-sm"
+            onChange={(event) => setPassword(event.target.value)}
+            className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0a0f] px-3 py-2"
             required
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1 text-gray-300">Join as</label>
+        </label>
+        <label className="block text-sm text-gray-300">
+          Account type
           <select
             value={role}
-            onChange={(e) => setRole(e.target.value as any)}
-            className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-sm"
+            onChange={(event) => setRole(event.target.value as Role)}
+            className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0a0f] px-3 py-2"
           >
-            <option value="LEARNER">Learner (Earn / pay to learn)</option>
-            <option value="CREATOR">Creator (Publish videos for sats)</option>
-            <option value="ADVERTISER">Advertiser (Create ad campaigns)</option>
+            <option value="LEARNER">Learner</option>
+            <option value="CREATOR">Creator</option>
+            <option value="ADVERTISER">Advertiser</option>
           </select>
-        </div>
-
+        </label>
         <button
           type="submit"
-          disabled={loading}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-950 font-bold py-2 px-4 rounded transition-all disabled:opacity-50 text-sm cursor-pointer"
+          disabled={submitting}
+          className="w-full rounded-md bg-yellow-400 px-4 py-2 font-bold text-black disabled:opacity-50"
         >
-          {loading ? "Creating account..." : "Register"}
+          {submitting ? "Creating account..." : "Register"}
         </button>
       </form>
+      <p className="mt-5 text-center text-sm text-gray-400">
+        Already registered?{" "}
+        <Link to="/login" className="text-yellow-400 hover:underline">
+          Login
+        </Link>
+      </p>
     </div>
   );
 }
-export default RegisterComponent;

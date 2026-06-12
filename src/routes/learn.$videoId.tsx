@@ -1,248 +1,183 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
-import { apiClient } from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { QRCodeSVG } from "qrcode.react";
+import { useEffect, useRef, useState } from "react";
+
+import { useAuth } from "../hooks/use-auth";
+import { getErrorMessage, hasErrorCode } from "../lib/errors";
+import { checkInvoiceStatus, purchaseVideo } from "../server/payments";
+import { getVideoAccess, getVideoMeta } from "../server/videos";
+
+type VideoMeta = Awaited<ReturnType<typeof getVideoMeta>>;
+type Invoice = Awaited<ReturnType<typeof purchaseVideo>>;
 
 export const Route = createFileRoute("/learn/$videoId")({
-  head: () => ({
-    meta: [
-      { title: "SkillSats — Video Player" },
-      { name: "description", content: "Watch and learn, paid in sats." },
-    ],
-  }),
-  component: VideoPlayerComponent,
+  component: VideoPlayerPage,
+  head: () => ({ meta: [{ title: "Watch - SkillSats" }] }),
 });
 
-interface VideoMetadata {
-  id: string;
-  title: string;
-  description: string;
-  priceSats: number;
-  isFree: boolean;
-  courseId: string;
-  creatorId: string;
-  creatorUsername: string;
-  createdAt: string;
-}
-
-function VideoPlayerComponent() {
+function VideoPlayerPage() {
   const { videoId } = Route.useParams();
-  const { refreshUser } = useAuth();
-
-  const [video, setVideo] = useState<VideoMetadata | null>(null);
+  const { user } = useAuth();
+  const loadMeta = useServerFn(getVideoMeta);
+  const loadAccess = useServerFn(getVideoAccess);
+  const createInvoice = useServerFn(purchaseVideo);
+  const checkInvoice = useServerFn(checkInvoiceStatus);
+  const [video, setVideo] = useState<VideoMeta | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-
-  const [purchaseLoading, setPurchaseLoading] = useState(false);
-  const [invoice, setInvoice] = useState<{
-    payment_request: string;
-    r_hash: string;
-    amount_sats: number;
-  } | null>(null);
-  const [isSettled, setIsSettled] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
-
-  const pollIntervalRef = useRef<any>(null);
-
-  const loadVideoDetails = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const metaRes = await apiClient.get<VideoMetadata>(`/api/videos/${videoId}`);
-      setVideo(metaRes.data);
-
-      try {
-        const accessRes = await apiClient.get<{ url: string }>(`/api/videos/${videoId}/access`);
-        if (accessRes.data && accessRes.data.url) {
-          setVideoUrl(accessRes.data.url);
-          setHasAccess(true);
-        } else {
-          setHasAccess(false);
-        }
-      } catch (accessErr: any) {
-        setHasAccess(false);
-      }
-    } catch (err: any) {
-      console.error(err);
-      setError("Failed to load video details. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    loadVideoDetails();
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+
+    void Promise.all([
+      loadMeta({ data: { videoId } }),
+      loadAccess({ data: { videoId } }).catch((caught) => {
+        if (hasErrorCode(caught, "UNAUTHENTICATED")) {
+          return { hasAccess: false as const, videoUrl: null };
+        }
+        throw caught;
+      }),
+    ])
+      .then(([metadata, access]) => {
+        if (cancelled) return;
+        setVideo(metadata);
+        setVideoUrl(access.hasAccess ? access.videoUrl : null);
+      })
+      .catch((caught) => {
+        if (!cancelled) setError(getErrorMessage(caught, "Unable to load this video."));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-      }
+      cancelled = true;
+      if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [videoId]);
+  }, [loadAccess, loadMeta, videoId]);
+
+  const startPolling = (rHash: string) => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    pollingRef.current = setInterval(() => {
+      void checkInvoice({ data: { rHash } })
+        .then((status) => {
+          if (!status.settled || !status.videoUrl) return;
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setVideoUrl(status.videoUrl);
+          setPurchasing(false);
+        })
+        .catch((caught) => setError(getErrorMessage(caught, "Could not verify payment.")));
+    }, 2_000);
+  };
 
   const handleUnlock = async () => {
-    if (!video) return;
-    setPurchaseLoading(true);
     setError("");
+    setPurchasing(true);
     try {
-      const res = await apiClient.post(`/api/videos/${video.id}/purchase`);
-      setInvoice(res.data);
-      startPolling(res.data.r_hash);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.error || "Failed to generate Lightning invoice.");
-      setPurchaseLoading(false);
+      const nextInvoice = await createInvoice({ data: { videoId } });
+      setInvoice(nextInvoice);
+      startPolling(nextInvoice.r_hash);
+    } catch (caught) {
+      setError(getErrorMessage(caught, "Could not create a Lightning invoice."));
+      setPurchasing(false);
     }
   };
 
-  const startPolling = (r_hash: string) => {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-    }
-
-    pollIntervalRef.current = setInterval(async () => {
-      try {
-        const res = await apiClient.get<{ settled: boolean; videoUrl?: string }>(
-          `/api/invoices/${r_hash}/status`,
-        );
-        if (res.data.settled) {
-          if (pollIntervalRef.current) {
-            clearInterval(pollIntervalRef.current);
-          }
-          setIsSettled(true);
-          setVideoUrl(res.data.videoUrl || null);
-          setHasAccess(true);
-          await refreshUser();
-          setPurchaseLoading(false);
-        }
-      } catch (err) {
-        console.error("Error polling invoice status:", err);
-      }
-    }, 2000);
-  };
-
-  const handleCopy = () => {
+  const copyInvoice = async () => {
     if (!invoice) return;
-    navigator.clipboard.writeText(invoice.payment_request);
+    await navigator.clipboard.writeText(invoice.payment_request);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    window.setTimeout(() => setCopied(false), 2_000);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-20 text-gray-400">
-        <span>Loading video player...</span>
-      </div>
-    );
+  if (loading) return <p className="py-20 text-center text-gray-400">Loading video...</p>;
+  if (!video) {
+    return <p className="rounded-lg bg-red-500/10 p-4 text-red-300">{error}</p>;
   }
-
-  if (error && !video) {
-    return (
-      <div className="max-w-xl mx-auto my-12 p-6 bg-red-950/20 border border-red-800 rounded-lg text-red-200">
-        <h3 className="font-bold mb-2">Error</h3>
-        <p>{error}</p>
-      </div>
-    );
-  }
-
-  if (!video) return null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="relative aspect-video bg-black rounded-lg overflow-hidden border border-gray-800">
-        {hasAccess && videoUrl ? (
-          <video src={videoUrl} controls className="w-full h-full object-contain" autoPlay />
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div className="flex aspect-video items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black">
+        {videoUrl ? (
+          <video src={videoUrl} controls autoPlay className="h-full w-full object-contain" />
+        ) : !user ? (
+          <div className="max-w-md p-6 text-center">
+            <h2 className="text-xl font-bold">Login to unlock this video</h2>
+            <p className="mt-2 text-sm text-gray-400">
+              Purchases are linked to your SkillSats account.
+            </p>
+            <Link
+              to="/login"
+              className="mt-5 inline-block rounded-md bg-yellow-400 px-5 py-2 font-bold text-black"
+            >
+              Login
+            </Link>
+          </div>
+        ) : !invoice ? (
+          <div className="max-w-md p-6 text-center">
+            <h2 className="text-xl font-bold">{video.title}</h2>
+            <p className="mt-2 text-gray-400">
+              Unlock for{" "}
+              <span className="font-mono font-bold text-yellow-400">{video.priceSats} sats</span>
+            </p>
+            <button
+              type="button"
+              onClick={handleUnlock}
+              disabled={purchasing}
+              className="mt-5 rounded-md bg-yellow-400 px-5 py-2 font-bold text-black disabled:opacity-50"
+            >
+              {purchasing ? "Creating invoice..." : `Unlock for ${video.priceSats} sats`}
+            </button>
+          </div>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-gray-950/90 text-center">
-            {!invoice ? (
-              <div className="space-y-4 max-w-md">
-                <span className="text-4xl text-yellow-400 font-extrabold block">⚡</span>
-                <h3 className="text-xl font-bold text-gray-100">{video.title}</h3>
-                <p className="text-sm text-gray-400">
-                  This premium video requires a purchase of{" "}
-                  <span className="text-yellow-400 font-bold">{video.priceSats} sats</span> to
-                  unlock.
-                </p>
-                <button
-                  onClick={handleUnlock}
-                  disabled={purchaseLoading}
-                  className="bg-yellow-400 hover:bg-yellow-500 text-gray-950 font-bold px-6 py-2.5 rounded-lg text-sm transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  {purchaseLoading ? "Generating Invoice..." : `Unlock for ${video.priceSats} sats`}
-                </button>
-                {error && <p className="text-xs text-red-400 pt-2">{error}</p>}
-              </div>
-            ) : isSettled ? (
-              <div className="space-y-2 text-center">
-                <span className="text-5xl text-green-500 block animate-bounce">✓</span>
-                <h4 className="text-lg font-bold text-gray-100">Payment Received!</h4>
-                <p className="text-sm text-gray-400">Unlocking video...</p>
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-6 items-center w-full max-w-2xl text-left bg-gray-900 p-6 rounded-lg border border-gray-800">
-                <div className="flex flex-col items-center justify-center bg-white p-3 rounded-lg w-44 h-44 mx-auto">
-                  <QRCodeSVG value={invoice.payment_request} size={150} />
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-200">Pay with Lightning</h4>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Scan the QR code or copy the invoice below to pay{" "}
-                      <span className="text-yellow-400 font-bold">{invoice.amount_sats} sats</span>.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <textarea
-                      readOnly
-                      value={invoice.payment_request}
-                      className="w-full bg-gray-950 border border-gray-850 rounded p-2 text-xs text-gray-400 font-mono resize-none focus:outline-none h-16"
-                    />
-                    <button
-                      onClick={handleCopy}
-                      className="w-full bg-gray-850 hover:bg-gray-800 text-gray-200 border border-gray-700 py-1.5 px-3 rounded text-xs transition-all cursor-pointer font-medium"
-                    >
-                      {copied ? "Copied!" : "Copy Invoice String"}
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span className="w-2 h-2 rounded-full bg-yellow-400 animate-ping" />
-                    <span>Waiting for payment...</span>
-                  </div>
-                </div>
-              </div>
-            )}
+          <div className="grid w-full max-w-2xl gap-6 p-6 md:grid-cols-2">
+            <div className="mx-auto rounded-lg bg-white p-3">
+              <QRCodeSVG value={invoice.payment_request} size={210} />
+            </div>
+            <div className="flex flex-col justify-center">
+              <h2 className="text-xl font-bold">Pay with Lightning</h2>
+              <p className="mt-2 text-sm text-gray-400">
+                Send {invoice.amount_sats} sats. Access opens automatically after settlement.
+              </p>
+              <textarea
+                readOnly
+                value={invoice.payment_request}
+                className="mt-4 h-20 resize-none rounded border border-white/10 bg-[#111118] p-2 font-mono text-xs"
+              />
+              <button
+                type="button"
+                onClick={copyInvoice}
+                className="mt-2 rounded border border-white/15 px-3 py-2 text-sm"
+              >
+                {copied ? "Copied" : "Copy invoice"}
+              </button>
+              <p className="mt-3 text-sm text-yellow-400">Waiting for payment...</p>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-4">
-        <div className="flex justify-between items-start gap-4 flex-wrap">
+      {error && <p className="rounded bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+      <section className="rounded-xl border border-white/10 bg-[#111118] p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-100">{video.title}</h1>
-            <p className="text-sm text-gray-400 mt-1">
-              Created by <span className="text-yellow-400">@{video.creatorUsername}</span>
-            </p>
+            <h1 className="text-2xl font-bold">{video.title}</h1>
+            <p className="mt-1 text-sm text-gray-400">@{video.creatorUsername}</p>
           </div>
-          <div className="bg-gray-800 text-yellow-400 border border-gray-750 px-3 py-1 rounded text-sm font-mono font-bold">
+          <span className="font-mono font-bold text-yellow-400">
             {video.isFree ? "FREE" : `${video.priceSats} sats`}
-          </div>
+          </span>
         </div>
-        <hr className="border-gray-800" />
-        <div>
-          <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider">Description</h3>
-          <p className="text-gray-300 mt-2 text-sm whitespace-pre-wrap">{video.description}</p>
-        </div>
-        {video.courseId && (
-          <div className="text-xs text-gray-400 bg-gray-950 px-3 py-2 rounded inline-block">
-            Course ID: <span className="font-mono text-gray-300">{video.courseId}</span>
-          </div>
-        )}
-      </div>
+        <p className="mt-5 whitespace-pre-wrap text-gray-300">{video.description}</p>
+      </section>
     </div>
   );
 }
-export default VideoPlayerComponent;

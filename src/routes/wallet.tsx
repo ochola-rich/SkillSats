@@ -1,211 +1,188 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { apiClient } from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+
+import { useAuth } from "../hooks/use-auth";
+import { getErrorMessage, hasErrorCode } from "../lib/errors";
+import { getAdWatchHistory } from "../server/ads";
+import { getBalance, withdrawFunds } from "../server/wallet";
+
+type HistoryItem = Awaited<ReturnType<typeof getAdWatchHistory>>[number];
 
 export const Route = createFileRoute("/wallet")({
-  head: () => ({
-    meta: [
-      { title: "SkillSats Wallet — Bitcoin Lightning" },
-      { name: "description", content: "Manage your sats balance and Lightning transactions." },
-    ],
-  }),
-  component: WalletComponent,
+  component: WalletPage,
+  head: () => ({ meta: [{ title: "Wallet - SkillSats" }] }),
 });
 
-interface AdWatchItem {
-  id: string;
-  title: string;
-  rewardSats: number;
-  timestamp: string;
-}
-
-function WalletComponent() {
+function WalletPage() {
   const { user, refreshUser } = useAuth();
-  const [invoiceInput, setInvoiceInput] = useState("");
-  const [amountSats, setAmountSats] = useState<number>(0);
-  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const loadBalance = useServerFn(getBalance);
+  const loadHistory = useServerFn(getAdWatchHistory);
+  const withdraw = useServerFn(withdrawFunds);
+  const [balance, setBalance] = useState({ balanceSats: 0, approximateUSD: "0.00" });
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [paymentRequest, setPaymentRequest] = useState("");
+  const [amountSats, setAmountSats] = useState(0);
   const [paymentHash, setPaymentHash] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-  const [adHistory, setAdHistory] = useState<AdWatchItem[]>([]);
+
+  const loadWallet = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const [nextBalance, nextHistory] = await Promise.all([loadBalance(), loadHistory()]);
+      setBalance(nextBalance);
+      setHistory(nextHistory);
+    } catch (caught) {
+      setError(getErrorMessage(caught, "Unable to load your wallet."));
+    } finally {
+      setLoading(false);
+    }
+  }, [loadBalance, loadHistory, user]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const historyStr = localStorage.getItem("ad_history") || "[]";
-        setAdHistory(JSON.parse(historyStr));
-      } catch (err) {
-        console.error("Failed to parse ad watch history:", err);
-      }
-    }
-  }, []);
+    void loadWallet();
+  }, [loadWallet]);
 
-  const handleWithdraw = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleWithdraw = async (event: FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
     setError("");
-    setSuccessMsg("");
     setPaymentHash("");
-
-    if (!invoiceInput) {
-      setError("Please provide a Lightning invoice.");
-      return;
-    }
-
-    if (amountSats <= 0) {
-      setError("Withdrawal amount must be greater than 0.");
-      return;
-    }
-
-    setWithdrawLoading(true);
     try {
-      const res = await apiClient.post("/api/wallet/withdraw", {
-        payment_request: invoiceInput,
-        amount_sats: amountSats,
+      const result = await withdraw({
+        data: { payment_request: paymentRequest, amount_sats: amountSats },
       });
-
-      setPaymentHash(res.data.payment_hash || "Simulated payment hash");
-      setSuccessMsg("Withdrawal processed successfully!");
-      setInvoiceInput("");
+      setPaymentHash(result.payment_hash);
+      setPaymentRequest("");
       setAmountSats(0);
-      await refreshUser();
-    } catch (err: any) {
-      console.error(err);
-      setError(err.response?.data?.error || "Withdrawal failed. Check your balance or invoice.");
+      await Promise.all([refreshUser(), loadWallet()]);
+    } catch (caught) {
+      if (hasErrorCode(caught, "INSUFFICIENT_BALANCE")) {
+        setError("Insufficient balance.");
+      } else if (hasErrorCode(caught, "INVOICE_AMOUNT_MISMATCH")) {
+        setError("The invoice amount does not match the withdrawal amount.");
+      } else if (hasErrorCode(caught, "LND_PAYMENT_FAILED")) {
+        setError("Payment failed. Your balance has been restored.");
+      } else {
+        setError(getErrorMessage(caught, "Withdrawal failed."));
+      }
     } finally {
-      setWithdrawLoading(false);
+      setSubmitting(false);
     }
   };
 
-  const balanceSats = user?.balanceSats ?? 0;
-  const usdValue = balanceSats * 0.00065;
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-md rounded-xl border border-white/10 bg-[#111118] p-8 text-center">
+        <h1 className="text-2xl font-bold">Login to view your wallet</h1>
+        <Link
+          to="/login"
+          className="mt-5 inline-block rounded-md bg-yellow-400 px-5 py-2 font-bold text-black"
+        >
+          Login
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      {/* Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-            Available Balance
-          </span>
-          <p className="text-3xl font-bold text-yellow-400 font-mono">
-            ⚡ {balanceSats.toLocaleString()} sats
-          </p>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <section className="rounded-xl border border-white/10 bg-[#111118] p-6">
+        <p className="text-sm text-gray-400">Available balance</p>
+        <p className="mt-2 font-mono text-4xl font-bold text-yellow-400">
+          {balance.balanceSats.toLocaleString()} sats
+        </p>
+        <p className="mt-2 text-gray-400">Approximately ${balance.approximateUSD} USD</p>
+        <p className="mt-1 text-xs text-gray-500">Demo rate: 1 sat = $0.00065</p>
+      </section>
+
+      {error && <p className="rounded bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+      {paymentHash && (
+        <div className="rounded border border-green-500/30 bg-green-500/10 p-4 text-green-300">
+          <p className="font-bold">Payment sent</p>
+          <p className="mt-1 break-all font-mono text-xs">{paymentHash}</p>
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(paymentHash)}
+            className="mt-2 text-sm underline"
+          >
+            Copy payment hash
+          </button>
         </div>
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
-            Estimated USD Value
-          </span>
-          <p className="text-3xl font-bold text-gray-100 font-mono">
-            $
-            {usdValue.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </p>
-          <p className="text-[10px] text-gray-500 font-mono">Hardcoded rate: 1 sat = $0.00065</p>
-        </div>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Withdrawal Form */}
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-6">
-          <h3 className="text-sm font-bold text-gray-100 border-b border-gray-800 pb-3">
-            Withdraw Sats
-          </h3>
-
-          {error && (
-            <div className="bg-red-950/20 border border-red-800 text-red-200 p-3 rounded text-xs">
-              {error}
-            </div>
-          )}
-
-          {successMsg && (
-            <div className="bg-green-950/20 border border-green-800 text-green-200 p-3 rounded text-xs space-y-1">
-              <p className="font-bold">{successMsg}</p>
-              {paymentHash && (
-                <p className="font-mono break-all text-[10px] text-green-400 select-all">
-                  Hash: {paymentHash}
-                </p>
-              )}
-            </div>
-          )}
-
-          <form onSubmit={handleWithdraw} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
-                Lightning Invoice (payment_request)
+      <div className="grid gap-8 md:grid-cols-2">
+        <section className="rounded-xl border border-white/10 bg-[#111118] p-6">
+          <h2 className="text-xl font-bold">Withdraw sats</h2>
+          {user.role === "CREATOR" ? (
+            <form onSubmit={handleWithdraw} className="mt-5 space-y-4">
+              <label className="block text-sm text-gray-300">
+                Lightning invoice (BOLT11)
+                <textarea
+                  value={paymentRequest}
+                  onChange={(event) => setPaymentRequest(event.target.value)}
+                  rows={5}
+                  placeholder="lnbc1..."
+                  className="mt-1 w-full resize-none rounded-md border border-white/10 bg-[#0a0a0f] p-3 font-mono text-xs"
+                  required
+                />
               </label>
-              <textarea
-                value={invoiceInput}
-                onChange={(e) => setInvoiceInput(e.target.value)}
-                rows={4}
-                placeholder="lnbc..."
-                className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-xs font-mono resize-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
-                Amount to Withdraw (sats)
+              <label className="block text-sm text-gray-300">
+                Amount in sats
+                <input
+                  type="number"
+                  min={1}
+                  value={amountSats || ""}
+                  onChange={(event) => setAmountSats(Number(event.target.value))}
+                  className="mt-1 w-full rounded-md border border-white/10 bg-[#0a0a0f] px-3 py-2"
+                  required
+                />
               </label>
-              <input
-                type="number"
-                value={amountSats || ""}
-                onChange={(e) => setAmountSats(Math.max(0, parseInt(e.target.value) || 0))}
-                min={1}
-                className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-gray-100 focus:outline-none focus:border-yellow-400 text-sm font-mono"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={withdrawLoading}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-950 font-bold py-2.5 px-4 rounded transition-all disabled:opacity-50 text-sm cursor-pointer"
-            >
-              {withdrawLoading ? "Processing Withdrawal..." : "Withdraw"}
-            </button>
-          </form>
-        </div>
-
-        {/* Ad Watch History */}
-        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-6">
-          <h3 className="text-sm font-bold text-gray-100 border-b border-gray-800 pb-3">
-            AdWatch History
-          </h3>
-
-          {adHistory.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 text-sm">
-              No recent ad watches recorded in this browser.
-            </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full rounded-md bg-yellow-400 px-4 py-2 font-bold text-black disabled:opacity-50"
+              >
+                {submitting ? "Sending..." : "Withdraw"}
+              </button>
+            </form>
           ) : (
-            <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-1">
-              {adHistory.map((item, idx) => (
-                <div
-                  key={`${item.id}-${idx}`}
-                  className="p-3 bg-gray-950 border border-gray-850 rounded flex justify-between items-center text-xs"
-                >
-                  <div className="space-y-1">
-                    <p className="font-bold text-gray-300 line-clamp-1">{item.title}</p>
-                    <p className="text-[10px] text-gray-500">
-                      {new Date(item.timestamp).toLocaleString()}
-                    </p>
+            <p className="mt-4 text-sm text-gray-400">
+              Withdrawals are currently available to creator accounts.
+            </p>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-white/10 bg-[#111118] p-6">
+          <h2 className="text-xl font-bold">Ad earnings</h2>
+          {loading ? (
+            <p className="py-8 text-center text-gray-400">Loading history...</p>
+          ) : history.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-400">
+              No ad earnings yet. Visit the Earn page.
+            </p>
+          ) : (
+            <div className="mt-4 divide-y divide-white/10">
+              {history.map((item) => (
+                <div key={item.id} className="flex items-start justify-between gap-3 py-3">
+                  <div>
+                    <p className="text-sm font-medium">{item.adTitle}</p>
+                    <time className="text-xs text-gray-500">
+                      {new Date(item.watchedAt).toLocaleString()}
+                    </time>
                   </div>
-                  <span className="text-yellow-400 font-bold font-mono">
-                    +{item.rewardSats} sats
+                  <span className="whitespace-nowrap font-mono text-sm text-yellow-400">
+                    +{item.earnedSats} sats
                   </span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );
 }
-<<<<<<< HEAD
-export default WalletComponent;
-=======
->>>>>>> main
