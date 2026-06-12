@@ -16,6 +16,22 @@ import { Route as EarnRouteImport } from './routes/earn'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LearnVideoIdRouteImport } from './routes/learn.$videoId'
+import { Route as ApiVideosRouteImport } from './routes/api/videos'
+import { Route as ApiAdsRouteImport } from './routes/api/ads'
+import { Route as ApiWalletWithdrawRouteImport } from './routes/api/wallet/withdraw'
+import { Route as ApiWalletBalanceRouteImport } from './routes/api/wallet/balance'
+import { Route as ApiVideosMineRouteImport } from './routes/api/videos/mine'
+import { Route as ApiVideosVideoIdRouteImport } from './routes/api/videos/$videoId'
+import { Route as ApiAuthRegisterRouteImport } from './routes/api/auth/register'
+import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
+import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
+import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
+import { Route as ApiAdsNextRouteImport } from './routes/api/ads/next'
+import { Route as ApiAdsHistoryRouteImport } from './routes/api/ads/history'
+import { Route as ApiVideosVideoIdPurchaseRouteImport } from './routes/api/videos/$videoId/purchase'
+import { Route as ApiVideosVideoIdAccessRouteImport } from './routes/api/videos/$videoId/access'
+import { Route as ApiInvoicesRHashStatusRouteImport } from './routes/api/invoices/$rHash/status'
+import { Route as ApiAdsAdIdWatchedRouteImport } from './routes/api/ads/$adId/watched'
 
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
@@ -52,6 +68,87 @@ const LearnVideoIdRoute = LearnVideoIdRouteImport.update({
   path: '/learn/$videoId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVideosRoute = ApiVideosRouteImport.update({
+  id: '/api/videos',
+  path: '/api/videos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdsRoute = ApiAdsRouteImport.update({
+  id: '/api/ads',
+  path: '/api/ads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWalletWithdrawRoute = ApiWalletWithdrawRouteImport.update({
+  id: '/api/wallet/withdraw',
+  path: '/api/wallet/withdraw',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWalletBalanceRoute = ApiWalletBalanceRouteImport.update({
+  id: '/api/wallet/balance',
+  path: '/api/wallet/balance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVideosMineRoute = ApiVideosMineRouteImport.update({
+  id: '/mine',
+  path: '/mine',
+  getParentRoute: () => ApiVideosRoute,
+} as any)
+const ApiVideosVideoIdRoute = ApiVideosVideoIdRouteImport.update({
+  id: '/$videoId',
+  path: '/$videoId',
+  getParentRoute: () => ApiVideosRoute,
+} as any)
+const ApiAuthRegisterRoute = ApiAuthRegisterRouteImport.update({
+  id: '/api/auth/register',
+  path: '/api/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
+  id: '/api/auth/me',
+  path: '/api/auth/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
+  id: '/api/auth/logout',
+  path: '/api/auth/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthLoginRoute = ApiAuthLoginRouteImport.update({
+  id: '/api/auth/login',
+  path: '/api/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdsNextRoute = ApiAdsNextRouteImport.update({
+  id: '/next',
+  path: '/next',
+  getParentRoute: () => ApiAdsRoute,
+} as any)
+const ApiAdsHistoryRoute = ApiAdsHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => ApiAdsRoute,
+} as any)
+const ApiVideosVideoIdPurchaseRoute =
+  ApiVideosVideoIdPurchaseRouteImport.update({
+    id: '/purchase',
+    path: '/purchase',
+    getParentRoute: () => ApiVideosVideoIdRoute,
+  } as any)
+const ApiVideosVideoIdAccessRoute = ApiVideosVideoIdAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
+  getParentRoute: () => ApiVideosVideoIdRoute,
+} as any)
+const ApiInvoicesRHashStatusRoute = ApiInvoicesRHashStatusRouteImport.update({
+  id: '/api/invoices/$rHash/status',
+  path: '/api/invoices/$rHash/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdsAdIdWatchedRoute = ApiAdsAdIdWatchedRouteImport.update({
+  id: '/$adId/watched',
+  path: '/$adId/watched',
+  getParentRoute: () => ApiAdsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,7 +157,23 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/wallet': typeof WalletRoute
+  '/api/ads': typeof ApiAdsRouteWithChildren
+  '/api/videos': typeof ApiVideosRouteWithChildren
   '/learn/$videoId': typeof LearnVideoIdRoute
+  '/api/ads/history': typeof ApiAdsHistoryRoute
+  '/api/ads/next': typeof ApiAdsNextRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/auth/register': typeof ApiAuthRegisterRoute
+  '/api/videos/$videoId': typeof ApiVideosVideoIdRouteWithChildren
+  '/api/videos/mine': typeof ApiVideosMineRoute
+  '/api/wallet/balance': typeof ApiWalletBalanceRoute
+  '/api/wallet/withdraw': typeof ApiWalletWithdrawRoute
+  '/api/ads/$adId/watched': typeof ApiAdsAdIdWatchedRoute
+  '/api/invoices/$rHash/status': typeof ApiInvoicesRHashStatusRoute
+  '/api/videos/$videoId/access': typeof ApiVideosVideoIdAccessRoute
+  '/api/videos/$videoId/purchase': typeof ApiVideosVideoIdPurchaseRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -69,7 +182,23 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/wallet': typeof WalletRoute
+  '/api/ads': typeof ApiAdsRouteWithChildren
+  '/api/videos': typeof ApiVideosRouteWithChildren
   '/learn/$videoId': typeof LearnVideoIdRoute
+  '/api/ads/history': typeof ApiAdsHistoryRoute
+  '/api/ads/next': typeof ApiAdsNextRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/auth/register': typeof ApiAuthRegisterRoute
+  '/api/videos/$videoId': typeof ApiVideosVideoIdRouteWithChildren
+  '/api/videos/mine': typeof ApiVideosMineRoute
+  '/api/wallet/balance': typeof ApiWalletBalanceRoute
+  '/api/wallet/withdraw': typeof ApiWalletWithdrawRoute
+  '/api/ads/$adId/watched': typeof ApiAdsAdIdWatchedRoute
+  '/api/invoices/$rHash/status': typeof ApiInvoicesRHashStatusRoute
+  '/api/videos/$videoId/access': typeof ApiVideosVideoIdAccessRoute
+  '/api/videos/$videoId/purchase': typeof ApiVideosVideoIdPurchaseRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -79,7 +208,23 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/wallet': typeof WalletRoute
+  '/api/ads': typeof ApiAdsRouteWithChildren
+  '/api/videos': typeof ApiVideosRouteWithChildren
   '/learn/$videoId': typeof LearnVideoIdRoute
+  '/api/ads/history': typeof ApiAdsHistoryRoute
+  '/api/ads/next': typeof ApiAdsNextRoute
+  '/api/auth/login': typeof ApiAuthLoginRoute
+  '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/auth/register': typeof ApiAuthRegisterRoute
+  '/api/videos/$videoId': typeof ApiVideosVideoIdRouteWithChildren
+  '/api/videos/mine': typeof ApiVideosMineRoute
+  '/api/wallet/balance': typeof ApiWalletBalanceRoute
+  '/api/wallet/withdraw': typeof ApiWalletWithdrawRoute
+  '/api/ads/$adId/watched': typeof ApiAdsAdIdWatchedRoute
+  '/api/invoices/$rHash/status': typeof ApiInvoicesRHashStatusRoute
+  '/api/videos/$videoId/access': typeof ApiVideosVideoIdAccessRoute
+  '/api/videos/$videoId/purchase': typeof ApiVideosVideoIdPurchaseRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,7 +235,23 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/wallet'
+    | '/api/ads'
+    | '/api/videos'
     | '/learn/$videoId'
+    | '/api/ads/history'
+    | '/api/ads/next'
+    | '/api/auth/login'
+    | '/api/auth/logout'
+    | '/api/auth/me'
+    | '/api/auth/register'
+    | '/api/videos/$videoId'
+    | '/api/videos/mine'
+    | '/api/wallet/balance'
+    | '/api/wallet/withdraw'
+    | '/api/ads/$adId/watched'
+    | '/api/invoices/$rHash/status'
+    | '/api/videos/$videoId/access'
+    | '/api/videos/$videoId/purchase'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -99,7 +260,23 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/wallet'
+    | '/api/ads'
+    | '/api/videos'
     | '/learn/$videoId'
+    | '/api/ads/history'
+    | '/api/ads/next'
+    | '/api/auth/login'
+    | '/api/auth/logout'
+    | '/api/auth/me'
+    | '/api/auth/register'
+    | '/api/videos/$videoId'
+    | '/api/videos/mine'
+    | '/api/wallet/balance'
+    | '/api/wallet/withdraw'
+    | '/api/ads/$adId/watched'
+    | '/api/invoices/$rHash/status'
+    | '/api/videos/$videoId/access'
+    | '/api/videos/$videoId/purchase'
   id:
     | '__root__'
     | '/'
@@ -108,7 +285,23 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/wallet'
+    | '/api/ads'
+    | '/api/videos'
     | '/learn/$videoId'
+    | '/api/ads/history'
+    | '/api/ads/next'
+    | '/api/auth/login'
+    | '/api/auth/logout'
+    | '/api/auth/me'
+    | '/api/auth/register'
+    | '/api/videos/$videoId'
+    | '/api/videos/mine'
+    | '/api/wallet/balance'
+    | '/api/wallet/withdraw'
+    | '/api/ads/$adId/watched'
+    | '/api/invoices/$rHash/status'
+    | '/api/videos/$videoId/access'
+    | '/api/videos/$videoId/purchase'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,7 +311,16 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   WalletRoute: typeof WalletRoute
+  ApiAdsRoute: typeof ApiAdsRouteWithChildren
+  ApiVideosRoute: typeof ApiVideosRouteWithChildren
   LearnVideoIdRoute: typeof LearnVideoIdRoute
+  ApiAuthLoginRoute: typeof ApiAuthLoginRoute
+  ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
+  ApiAuthMeRoute: typeof ApiAuthMeRoute
+  ApiAuthRegisterRoute: typeof ApiAuthRegisterRoute
+  ApiWalletBalanceRoute: typeof ApiWalletBalanceRoute
+  ApiWalletWithdrawRoute: typeof ApiWalletWithdrawRoute
+  ApiInvoicesRHashStatusRoute: typeof ApiInvoicesRHashStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,8 +374,162 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LearnVideoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/videos': {
+      id: '/api/videos'
+      path: '/api/videos'
+      fullPath: '/api/videos'
+      preLoaderRoute: typeof ApiVideosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ads': {
+      id: '/api/ads'
+      path: '/api/ads'
+      fullPath: '/api/ads'
+      preLoaderRoute: typeof ApiAdsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wallet/withdraw': {
+      id: '/api/wallet/withdraw'
+      path: '/api/wallet/withdraw'
+      fullPath: '/api/wallet/withdraw'
+      preLoaderRoute: typeof ApiWalletWithdrawRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wallet/balance': {
+      id: '/api/wallet/balance'
+      path: '/api/wallet/balance'
+      fullPath: '/api/wallet/balance'
+      preLoaderRoute: typeof ApiWalletBalanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/videos/mine': {
+      id: '/api/videos/mine'
+      path: '/mine'
+      fullPath: '/api/videos/mine'
+      preLoaderRoute: typeof ApiVideosMineRouteImport
+      parentRoute: typeof ApiVideosRoute
+    }
+    '/api/videos/$videoId': {
+      id: '/api/videos/$videoId'
+      path: '/$videoId'
+      fullPath: '/api/videos/$videoId'
+      preLoaderRoute: typeof ApiVideosVideoIdRouteImport
+      parentRoute: typeof ApiVideosRoute
+    }
+    '/api/auth/register': {
+      id: '/api/auth/register'
+      path: '/api/auth/register'
+      fullPath: '/api/auth/register'
+      preLoaderRoute: typeof ApiAuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/me': {
+      id: '/api/auth/me'
+      path: '/api/auth/me'
+      fullPath: '/api/auth/me'
+      preLoaderRoute: typeof ApiAuthMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/logout': {
+      id: '/api/auth/logout'
+      path: '/api/auth/logout'
+      fullPath: '/api/auth/logout'
+      preLoaderRoute: typeof ApiAuthLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/login': {
+      id: '/api/auth/login'
+      path: '/api/auth/login'
+      fullPath: '/api/auth/login'
+      preLoaderRoute: typeof ApiAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ads/next': {
+      id: '/api/ads/next'
+      path: '/next'
+      fullPath: '/api/ads/next'
+      preLoaderRoute: typeof ApiAdsNextRouteImport
+      parentRoute: typeof ApiAdsRoute
+    }
+    '/api/ads/history': {
+      id: '/api/ads/history'
+      path: '/history'
+      fullPath: '/api/ads/history'
+      preLoaderRoute: typeof ApiAdsHistoryRouteImport
+      parentRoute: typeof ApiAdsRoute
+    }
+    '/api/videos/$videoId/purchase': {
+      id: '/api/videos/$videoId/purchase'
+      path: '/purchase'
+      fullPath: '/api/videos/$videoId/purchase'
+      preLoaderRoute: typeof ApiVideosVideoIdPurchaseRouteImport
+      parentRoute: typeof ApiVideosVideoIdRoute
+    }
+    '/api/videos/$videoId/access': {
+      id: '/api/videos/$videoId/access'
+      path: '/access'
+      fullPath: '/api/videos/$videoId/access'
+      preLoaderRoute: typeof ApiVideosVideoIdAccessRouteImport
+      parentRoute: typeof ApiVideosVideoIdRoute
+    }
+    '/api/invoices/$rHash/status': {
+      id: '/api/invoices/$rHash/status'
+      path: '/api/invoices/$rHash/status'
+      fullPath: '/api/invoices/$rHash/status'
+      preLoaderRoute: typeof ApiInvoicesRHashStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ads/$adId/watched': {
+      id: '/api/ads/$adId/watched'
+      path: '/$adId/watched'
+      fullPath: '/api/ads/$adId/watched'
+      preLoaderRoute: typeof ApiAdsAdIdWatchedRouteImport
+      parentRoute: typeof ApiAdsRoute
+    }
   }
 }
+
+interface ApiAdsRouteChildren {
+  ApiAdsHistoryRoute: typeof ApiAdsHistoryRoute
+  ApiAdsNextRoute: typeof ApiAdsNextRoute
+  ApiAdsAdIdWatchedRoute: typeof ApiAdsAdIdWatchedRoute
+}
+
+const ApiAdsRouteChildren: ApiAdsRouteChildren = {
+  ApiAdsHistoryRoute: ApiAdsHistoryRoute,
+  ApiAdsNextRoute: ApiAdsNextRoute,
+  ApiAdsAdIdWatchedRoute: ApiAdsAdIdWatchedRoute,
+}
+
+const ApiAdsRouteWithChildren =
+  ApiAdsRoute._addFileChildren(ApiAdsRouteChildren)
+
+interface ApiVideosVideoIdRouteChildren {
+  ApiVideosVideoIdAccessRoute: typeof ApiVideosVideoIdAccessRoute
+  ApiVideosVideoIdPurchaseRoute: typeof ApiVideosVideoIdPurchaseRoute
+}
+
+const ApiVideosVideoIdRouteChildren: ApiVideosVideoIdRouteChildren = {
+  ApiVideosVideoIdAccessRoute: ApiVideosVideoIdAccessRoute,
+  ApiVideosVideoIdPurchaseRoute: ApiVideosVideoIdPurchaseRoute,
+}
+
+const ApiVideosVideoIdRouteWithChildren =
+  ApiVideosVideoIdRoute._addFileChildren(ApiVideosVideoIdRouteChildren)
+
+interface ApiVideosRouteChildren {
+  ApiVideosVideoIdRoute: typeof ApiVideosVideoIdRouteWithChildren
+  ApiVideosMineRoute: typeof ApiVideosMineRoute
+}
+
+const ApiVideosRouteChildren: ApiVideosRouteChildren = {
+  ApiVideosVideoIdRoute: ApiVideosVideoIdRouteWithChildren,
+  ApiVideosMineRoute: ApiVideosMineRoute,
+}
+
+const ApiVideosRouteWithChildren = ApiVideosRoute._addFileChildren(
+  ApiVideosRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -182,7 +538,16 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   WalletRoute: WalletRoute,
+  ApiAdsRoute: ApiAdsRouteWithChildren,
+  ApiVideosRoute: ApiVideosRouteWithChildren,
   LearnVideoIdRoute: LearnVideoIdRoute,
+  ApiAuthLoginRoute: ApiAuthLoginRoute,
+  ApiAuthLogoutRoute: ApiAuthLogoutRoute,
+  ApiAuthMeRoute: ApiAuthMeRoute,
+  ApiAuthRegisterRoute: ApiAuthRegisterRoute,
+  ApiWalletBalanceRoute: ApiWalletBalanceRoute,
+  ApiWalletWithdrawRoute: ApiWalletWithdrawRoute,
+  ApiInvoicesRHashStatusRoute: ApiInvoicesRHashStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
