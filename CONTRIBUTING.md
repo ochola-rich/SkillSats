@@ -10,6 +10,7 @@ Install the following tools:
 - Node.js 22.12 or newer
 - npm
 - Docker with Docker Compose
+- `curl` and `jq` for the headless Lightning bootstrap
 
 Bitcoin Core and LND are not required to install dependencies, start the application, or run the
 automated checks. Lightning configuration is optional; without it, paid video purchases, invoice
@@ -45,14 +46,102 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/skillsats"
 Replace `JWT_SECRET` before starting the application. Configure `LND_REST_HOST` and `LND_MACAROON`
 only when connecting to an external LND node for Lightning integration testing.
 
-| Variable        | Required | Purpose                                     |
-| --------------- | -------- | ------------------------------------------- |
-| `DATABASE_URL`  | Yes      | PostgreSQL connection string used by Prisma |
-| `JWT_SECRET`    | Yes      | Signs authentication cookies                |
-| `LND_REST_HOST` | No       | Base URL for an external LND REST API       |
-| `LND_MACAROON`  | No       | Hex-encoded LND macaroon sent with requests |
+| Variable            | Required | Purpose                                     |
+| ------------------- | -------- | ------------------------------------------- |
+| `DATABASE_URL`      | Yes      | PostgreSQL connection string used by Prisma |
+| `JWT_SECRET`        | Yes      | Signs authentication cookies                |
+| `LND_REST_HOST`     | No       | Base URL for the SkillSats LND REST API     |
+| `LND_MACAROON`      | No       | Hex-encoded LND macaroon                    |
+| `LND_MACAROON_PATH` | No       | Alternative path to a local macaroon file   |
+| `LND_TLS_CERT_PATH` | No       | CA certificate for the LND HTTPS connection |
 
 Do not commit `.env` files or real Lightning credentials.
+
+## Local Lightning Integration
+
+For a production-like development test, run the application against real LND nodes on Bitcoin
+regtest. Regtest coins have no real-world value, while invoices, HTLC settlement, channel
+liquidity, macaroons, and LND REST behavior remain representative of production.
+
+The Docker Compose Lightning profile runs:
+
+- Bitcoin Core 31.0 in regtest mode.
+- LND 0.21.0-beta named `skillsats`, used by the application.
+- LND 0.21.0-beta named `payer`, representing an external learner or creator wallet.
+
+Start and bootstrap the network:
+
+```bash
+npm run lightning:up
+```
+
+This command creates both wallets through LND's WalletUnlocker REST API, mines spendable regtest
+coins, funds `payer`, and opens a 1,000,000 sat channel with 500,000 sats pushed to `skillsats`.
+Both nodes therefore have outbound liquidity. The initial run can take several minutes while the
+first 101 blocks are mined; later runs reuse the persisted state.
+
+The bootstrap writes disposable macaroon credentials to the ignored
+`.local-lightning/app.env` file. REST and gRPC ports bind only to host loopback:
+
+| Node       | REST                     | gRPC              |
+| ---------- | ------------------------ | ----------------- |
+| SkillSats  | `https://127.0.0.1:8080` | `127.0.0.1:10009` |
+| Test payer | `https://127.0.0.1:8081` | `127.0.0.1:10010` |
+
+LND uses self-signed TLS certificates in this disposable environment. The application's existing
+development-only TLS relaxation accepts them; production does not.
+
+Verify node and channel readiness, then settle one payment in each direction:
+
+```bash
+npm run lightning:check
+npm run lightning:test
+```
+
+Start SkillSats with the generated credentials:
+
+```bash
+npm run dev:lightning
+```
+
+Exercise a paid video purchase:
+
+1. Start SkillSats and log in as `learner@test.com` with password `password123`.
+2. Open a paid video and select **Unlock** to create an invoice on the `skillsats` node.
+3. Copy the BOLT11 invoice and pay it from the separate `payer` node:
+
+```bash
+npm run lightning:pay -- "<bolt11-invoice>"
+```
+
+The browser's settlement poll should reveal the video, and 90% of the price should be credited to
+the video's creator exactly once.
+
+Exercise a creator withdrawal by creating an invoice on the external node:
+
+```bash
+npm run lightning:invoice -- 100 "SkillSats creator withdrawal"
+```
+
+Log in as `creator@test.com`, paste the returned invoice into the wallet, enter the same sat amount,
+and withdraw. The `skillsats` node pays the `payer` node through the same LND endpoint used in
+production.
+
+Follow logs or stop the containers without deleting state:
+
+```bash
+npm run lightning:logs
+npm run lightning:down
+```
+
+Delete all local Lightning wallets, channels, and regtest chain data with:
+
+```bash
+npm run lightning:reset
+```
+
+The reset command is destructive only to `.local-lightning/` and the Bitcoin regtest Docker volume.
+PostgreSQL data is left intact.
 
 ## Prepare the Database
 

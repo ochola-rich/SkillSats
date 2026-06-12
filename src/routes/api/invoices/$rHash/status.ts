@@ -10,7 +10,9 @@ export const Route = createFileRoute("/api/invoices/$rHash/status")({
       GET: async ({ params }) =>
         withApiErrors(async () => {
           const data = invoiceStatusSchema.parse({ rHash: params.rHash });
-          return Response.json(await checkInvoiceStatus({ data }));
+          return Response.json(await checkInvoiceStatus({ data }), {
+            headers: { "Cache-Control": "private, no-store" },
+          });
         }),
     },
   },

@@ -15,5 +15,105 @@ services:
       timeout: 5s
       retries: 10
 
+  bitcoin:
+    image: bitcoin/bitcoin:31.0
+    profiles: ["lightning"]
+    command:
+      - -printtoconsole
+      - -regtest=1
+      - -server=1
+      - -txindex=1
+      - -fallbackfee=0.0002
+      - -rpcbind=0.0.0.0
+      - -rpcallowip=0.0.0.0/0
+      - -rpcuser=skillsats
+      - -rpcpassword=skillsats
+      - -zmqpubrawblock=tcp://0.0.0.0:28332
+      - -zmqpubrawtx=tcp://0.0.0.0:28333
+    volumes:
+      - bitcoin-regtest-data:/home/bitcoin/.bitcoin
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bitcoin-cli",
+          "-regtest",
+          "-rpcuser=skillsats",
+          "-rpcpassword=skillsats",
+          "getblockchaininfo",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  lnd-skillsats:
+    image: lightninglabs/lnd:v0.21.0-beta
+    profiles: ["lightning"]
+    command:
+      - --alias=skillsats
+      - --bitcoin.regtest
+      - --bitcoin.node=bitcoind
+      - --bitcoind.rpchost=bitcoin:18443
+      - --bitcoind.rpcuser=skillsats
+      - --bitcoind.rpcpass=skillsats
+      - --bitcoind.zmqpubrawblock=tcp://bitcoin:28332
+      - --bitcoind.zmqpubrawtx=tcp://bitcoin:28333
+      - --listen=0.0.0.0:9735
+      - --rpclisten=0.0.0.0:10009
+      - --restlisten=0.0.0.0:8080
+      - --tlsextraip=127.0.0.1
+      - --tlsextradomain=localhost
+      - --wallet-unlock-password-file=/run/secrets/lnd-wallet-password
+      - --wallet-unlock-allow-create
+    depends_on:
+      bitcoin:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:10009:10009"
+    volumes:
+      - ./.local-lightning/lnd-skillsats:/root/.lnd
+      - ./docker/lightning/wallet-password.txt:/run/secrets/lnd-wallet-password:ro
+    healthcheck:
+      test: ["CMD", "lncli", "--network=regtest", "getinfo"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  lnd-payer:
+    image: lightninglabs/lnd:v0.21.0-beta
+    profiles: ["lightning"]
+    command:
+      - --alias=payer
+      - --bitcoin.regtest
+      - --bitcoin.node=bitcoind
+      - --bitcoind.rpchost=bitcoin:18443
+      - --bitcoind.rpcuser=skillsats
+      - --bitcoind.rpcpass=skillsats
+      - --bitcoind.zmqpubrawblock=tcp://bitcoin:28332
+      - --bitcoind.zmqpubrawtx=tcp://bitcoin:28333
+      - --listen=0.0.0.0:9735
+      - --rpclisten=0.0.0.0:10009
+      - --restlisten=0.0.0.0:8080
+      - --tlsextraip=127.0.0.1
+      - --tlsextradomain=localhost
+      - --wallet-unlock-password-file=/run/secrets/lnd-wallet-password
+      - --wallet-unlock-allow-create
+    depends_on:
+      bitcoin:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:8080"
+      - "127.0.0.1:10010:10009"
+    volumes:
+      - ./.local-lightning/lnd-payer:/root/.lnd
+      - ./docker/lightning/wallet-password.txt:/run/secrets/lnd-wallet-password:ro
+    healthcheck:
+      test: ["CMD", "lncli", "--network=regtest", "getinfo"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
 volumes:
   postgres-data:
+  bitcoin-regtest-data:

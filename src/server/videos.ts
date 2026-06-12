@@ -71,7 +71,7 @@ export const createVideo = createServerFn({ method: "POST" })
 //   (a) the video is free (isFree === true), OR
 //   (b) the authenticated user has a settled Purchase for this video.
 // Returns { hasAccess: false } if neither condition is met.
-export const getVideoAccess = createServerFn({ method: "GET" })
+export const getVideoAccess = createServerFn({ method: "POST" })
   .validator(videoIdSchema)
   .handler(async ({ data }) => {
     const video = await db.video.findUnique({ where: { id: data.videoId } });
@@ -94,7 +94,7 @@ export const getVideoAccess = createServerFn({ method: "GET" })
   });
 
 // --- LIST CREATOR'S VIDEOS WITH PURCHASE COUNTS ---
-export const listMyVideos = createServerFn({ method: "GET" }).handler(async () => {
+export const listMyVideos = createServerFn({ method: "POST" }).handler(async () => {
   const creator = await requireRole("CREATOR");
   const videos = await db.video.findMany({
     where: { creatorId: creator.id },

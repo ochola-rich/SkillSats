@@ -67,7 +67,7 @@ export const logoutUser = createServerFn({ method: "POST" }).handler(async () =>
 });
 
 // --- GET ME (fetch current user profile + balance) ---
-export const getMe = createServerFn({ method: "GET" }).handler(async () => {
+export const getMe = createServerFn({ method: "POST" }).handler(async () => {
   const user = await requireAuth();
   return {
     id: user.id,

@@ -14,7 +14,7 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const login = useServerFn(loginUser);
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,8 +25,8 @@ function LoginPage() {
     setError("");
     setSubmitting(true);
     try {
-      await login({ data: { email, password } });
-      await refreshUser();
+      const user = await login({ data: { email, password } });
+      setUser(user);
       await navigate({ to: "/" });
     } catch (caught) {
       setError(

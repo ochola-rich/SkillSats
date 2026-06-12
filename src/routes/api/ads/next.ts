@@ -9,7 +9,12 @@ export const Route = createFileRoute("/api/ads/next")({
       GET: async () =>
         withApiErrors(async () => {
           const ad = await getNextAd();
-          return ad ? Response.json(ad) : new Response(null, { status: 204 });
+          return ad
+            ? Response.json(ad, { headers: { "Cache-Control": "private, no-store" } })
+            : new Response(null, {
+                status: 204,
+                headers: { "Cache-Control": "private, no-store" },
+              });
         }),
     },
   },

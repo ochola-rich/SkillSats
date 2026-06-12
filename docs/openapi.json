@@ -549,10 +549,9 @@
     "/api/ads/next": {
       "get": {
         "operationId": "getNextAd",
-        "summary": "Get a random available ad",
-        "description": "Only active ads whose next full campaign reward fits within the remaining budget are eligible. rewardSats is the viewer's 60% share.",
+        "summary": "Get an available watch-to-earn video",
+        "description": "Returns an active video the current user has not claimed in the last 24 hours and whose next full campaign reward fits within the remaining budget. rewardSats is the viewer's 60% share.",
         "tags": ["Ads"],
-        "security": [],
         "responses": {
           "200": {
             "description": "Available ad.",
@@ -566,6 +565,9 @@
           },
           "204": {
             "description": "No ad is currently available."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }

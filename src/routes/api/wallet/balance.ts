@@ -6,7 +6,12 @@ import { getBalance } from "@/server/wallet";
 export const Route = createFileRoute("/api/wallet/balance")({
   server: {
     handlers: {
-      GET: async () => withApiErrors(async () => Response.json(await getBalance())),
+      GET: async () =>
+        withApiErrors(async () =>
+          Response.json(await getBalance(), {
+            headers: { "Cache-Control": "private, no-store" },
+          }),
+        ),
     },
   },
 });

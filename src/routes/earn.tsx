@@ -15,6 +15,7 @@ export const Route = createFileRoute("/earn")({
 
 function EarnPage() {
   const { user, refreshUser } = useAuth();
+  const userId = user?.id;
   const loadNextAd = useServerFn(getNextAd);
   const claimAd = useServerFn(markAdWatched);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -44,11 +45,15 @@ function EarnPage() {
   }, [loadNextAd]);
 
   useEffect(() => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     void fetchNextAd();
     return () => {
       if (nextAdTimerRef.current) clearTimeout(nextAdTimerRef.current);
     };
-  }, [fetchNextAd]);
+  }, [fetchNextAd, userId]);
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;

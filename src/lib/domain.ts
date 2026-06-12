@@ -14,6 +14,16 @@ export function hasRemainingAdBudget(spentSats: number, rewardSats: number, budg
   return spentSats + rewardSats <= budgetSats;
 }
 
+export function isAdAvailableToUser(
+  ad: { id: string; spentSats: number; rewardSats: number; budgetSats: number },
+  recentlyWatchedAdIds: ReadonlySet<string>,
+) {
+  return (
+    !recentlyWatchedAdIds.has(ad.id) &&
+    hasRemainingAdBudget(ad.spentSats, ad.rewardSats, ad.budgetSats)
+  );
+}
+
 export function satsToUsd(sats: number) {
   return (sats * SAT_USD_RATE).toFixed(2);
 }

@@ -3,9 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { useAuth } from "../hooks/use-auth";
+import { satsToUsd } from "../lib/domain";
 import { getErrorMessage, hasErrorCode, isLightningUnavailable } from "../lib/errors";
 import { getAdWatchHistory } from "../server/ads";
-import { getBalance, withdrawFunds } from "../server/wallet";
+import { withdrawFunds } from "../server/wallet";
 
 type HistoryItem = Awaited<ReturnType<typeof getAdWatchHistory>>[number];
 
@@ -16,10 +17,8 @@ export const Route = createFileRoute("/wallet")({
 
 function WalletPage() {
   const { user, refreshUser } = useAuth();
-  const loadBalance = useServerFn(getBalance);
   const loadHistory = useServerFn(getAdWatchHistory);
   const withdraw = useServerFn(withdrawFunds);
-  const [balance, setBalance] = useState({ balanceSats: 0, approximateUSD: "0.00" });
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [paymentRequest, setPaymentRequest] = useState("");
   const [amountSats, setAmountSats] = useState(0);
@@ -32,15 +31,13 @@ function WalletPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const [nextBalance, nextHistory] = await Promise.all([loadBalance(), loadHistory()]);
-      setBalance(nextBalance);
-      setHistory(nextHistory);
+      setHistory(await loadHistory());
     } catch (caught) {
       setError(getErrorMessage(caught, "Unable to load your wallet."));
     } finally {
       setLoading(false);
     }
-  }, [loadBalance, loadHistory, user]);
+  }, [loadHistory, user]);
 
   useEffect(() => {
     void loadWallet();
@@ -93,12 +90,25 @@ function WalletPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <section className="rounded-xl border border-white/10 bg-[#111118] p-6">
-        <p className="text-sm text-gray-400">Available balance</p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm text-gray-400">SkillSats account</p>
+            <p className="mt-1 font-semibold">{user.username}</p>
+            <p className="text-sm text-gray-400">{user.email}</p>
+          </div>
+          <span className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase text-gray-300">
+            {user.role.toLowerCase()}
+          </span>
+        </div>
+        <p className="mt-6 text-sm text-gray-400">Available in-app balance</p>
         <p className="mt-2 font-mono text-4xl font-bold text-yellow-400">
-          {balance.balanceSats.toLocaleString()} sats
+          {user.balanceSats.toLocaleString()} sats
         </p>
-        <p className="mt-2 text-gray-400">Approximately ${balance.approximateUSD} USD</p>
+        <p className="mt-2 text-gray-400">Approximately ${satsToUsd(user.balanceSats)} USD</p>
         <p className="mt-1 text-xs text-gray-500">Demo rate: 1 sat = $0.00065</p>
+        <p className="mt-3 text-xs text-gray-500">
+          This account-specific balance is separate from the shared development LND node liquidity.
+        </p>
       </section>
 
       {error && <p className="rounded bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}

@@ -88,15 +88,33 @@ async function main() {
   });
 
   // --- ADS ---
-  await prisma.ad.create({
-    data: {
-      title: "Stack Sats with Bitrefill — Pay Bills with Bitcoin",
-      videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4", // replace with real ad
-      budgetSats: 10000,
-      rewardSats: 50, // user earns 60% = 30 sats per view
-      spentSats: 0,
-      active: true,
-    },
+  await prisma.ad.createMany({
+    data: [
+      {
+        title: "Stack Sats with Bitrefill - Pay Bills with Bitcoin",
+        videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+        budgetSats: 10000,
+        rewardSats: 50, // user earns 60% = 30 sats per view
+        spentSats: 0,
+        active: true,
+      },
+      {
+        title: "Lightning Payments in Everyday Commerce",
+        videoUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+        budgetSats: 12000,
+        rewardSats: 75, // user earns 60% = 45 sats per view
+        spentSats: 0,
+        active: true,
+      },
+      {
+        title: "Build on Bitcoin: A Developer Story",
+        videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4",
+        budgetSats: 15000,
+        rewardSats: 100, // user earns 60% = 60 sats per view
+        spentSats: 0,
+        active: true,
+      },
+    ],
   });
 
   console.log("✅ Seeded:");
@@ -104,7 +122,7 @@ async function main() {
     `   3 users (learner@test.com, creator@test.com, advertiser@test.com) — password: password123`,
   );
   console.log(`   3 videos (1 free, 2 paid at 100 and 200 sats)`);
-  console.log(`   1 ad (10,000 sat budget, 50 sat reward, user earns 30 sats per view)`);
+  console.log(`   3 watch-to-earn videos (30, 45, and 60 sats per completed view)`);
 }
 
 main()

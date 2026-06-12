@@ -7,5 +7,9 @@ export function hasErrorCode(error: unknown, code: string) {
 }
 
 export function isLightningUnavailable(error: unknown) {
-  return hasErrorCode(error, "LND_NOT_CONFIGURED") || hasErrorCode(error, "LND_UNAVAILABLE");
+  return (
+    hasErrorCode(error, "LND_NOT_CONFIGURED") ||
+    hasErrorCode(error, "LND_INVALID_CONFIG") ||
+    hasErrorCode(error, "LND_UNAVAILABLE")
+  );
 }

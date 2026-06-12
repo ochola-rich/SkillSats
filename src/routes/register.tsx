@@ -16,7 +16,7 @@ export const Route = createFileRoute("/register")({
 function RegisterPage() {
   const register = useServerFn(registerUser);
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -29,8 +29,8 @@ function RegisterPage() {
     setError("");
     setSubmitting(true);
     try {
-      await register({ data: { email, username, password, role } });
-      await refreshUser();
+      const user = await register({ data: { email, username, password, role } });
+      setUser(user);
       await navigate({ to: "/" });
     } catch (caught) {
       setError(

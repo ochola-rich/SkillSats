@@ -10,7 +10,9 @@ export const Route = createFileRoute("/api/videos/$videoId/access")({
       GET: async ({ params }) =>
         withApiErrors(async () => {
           const data = videoIdSchema.parse({ videoId: params.videoId });
-          return Response.json(await getVideoAccess({ data }));
+          return Response.json(await getVideoAccess({ data }), {
+            headers: { "Cache-Control": "private, no-store" },
+          });
         }),
     },
   },

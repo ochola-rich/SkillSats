@@ -5,6 +5,7 @@ import {
   calculateAdViewerReward,
   calculateCreatorRevenue,
   hasRemainingAdBudget,
+  isAdAvailableToUser,
   satsToUsd,
 } from "./domain";
 
@@ -21,6 +22,13 @@ test("calculates the viewer's 60 percent ad reward", () => {
 test("accepts only ad views that fit fully within the remaining budget", () => {
   assert.equal(hasRemainingAdBudget(90, 10, 100), true);
   assert.equal(hasRemainingAdBudget(91, 10, 100), false);
+});
+
+test("keeps watch-to-earn availability separate for each user", () => {
+  const ad = { id: "ad-1", spentSats: 0, rewardSats: 50, budgetSats: 1000 };
+
+  assert.equal(isAdAvailableToUser(ad, new Set(["ad-1"])), false);
+  assert.equal(isAdAvailableToUser(ad, new Set(["ad-2"])), true);
 });
 
 test("formats the demo sat to USD conversion", () => {

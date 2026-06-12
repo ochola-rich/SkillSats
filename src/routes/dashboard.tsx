@@ -3,9 +3,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 
 import { useAuth } from "../hooks/use-auth";
+import { satsToUsd } from "../lib/domain";
 import { getErrorMessage } from "../lib/errors";
 import { createVideo, listMyVideos } from "../server/videos";
-import { getBalance } from "../server/wallet";
 
 type CreatorVideo = Awaited<ReturnType<typeof listMyVideos>>[number];
 
@@ -16,12 +16,10 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const loadBalance = useServerFn(getBalance);
+  const { user, refreshUser } = useAuth();
   const loadVideos = useServerFn(listMyVideos);
   const publishVideo = useServerFn(createVideo);
   const [videos, setVideos] = useState<CreatorVideo[]>([]);
-  const [balance, setBalance] = useState({ balanceSats: 0, approximateUSD: "0.00" });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -36,15 +34,14 @@ function DashboardPage() {
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const [nextBalance, nextVideos] = await Promise.all([loadBalance(), loadVideos()]);
-      setBalance(nextBalance);
+      const [, nextVideos] = await Promise.all([refreshUser(), loadVideos()]);
       setVideos(nextVideos);
     } catch (caught) {
       setError(getErrorMessage(caught, "Unable to load the creator dashboard."));
     } finally {
       setLoading(false);
     }
-  }, [loadBalance, loadVideos]);
+  }, [loadVideos, refreshUser]);
 
   useEffect(() => {
     if (user?.role !== "CREATOR") {
@@ -90,7 +87,7 @@ function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Stat
           label="Creator balance"
-          value={`${balance.balanceSats.toLocaleString()} sats (~$${balance.approximateUSD})`}
+          value={`${user.balanceSats.toLocaleString()} sats (~$${satsToUsd(user.balanceSats)})`}
         />
         <Stat label="Videos uploaded" value={String(videos.length)} />
         <Stat label="Settled purchases" value={String(purchaseCount)} />

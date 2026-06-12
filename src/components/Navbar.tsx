@@ -46,9 +46,14 @@ export function Navbar() {
 
         {user ? (
           <div className="flex items-center gap-3">
+            <div className="hidden min-w-0 text-right sm:block">
+              <p className="truncate text-sm font-semibold text-gray-100">{user.username}</p>
+              <p className="truncate text-xs text-gray-400">{user.email}</p>
+            </div>
             <Link
               to="/wallet"
               className="rounded-full border border-yellow-400/30 bg-yellow-400/10 px-3 py-1.5 font-mono text-sm font-semibold text-yellow-400"
+              title={`SkillSats balance for ${user.email}`}
             >
               {user.balanceSats.toLocaleString()} sats
             </Link>

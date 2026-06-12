@@ -6,7 +6,12 @@ import { getMe } from "@/server/auth";
 export const Route = createFileRoute("/api/auth/me")({
   server: {
     handlers: {
-      GET: async () => withApiErrors(async () => Response.json(await getMe())),
+      GET: async () =>
+        withApiErrors(async () =>
+          Response.json(await getMe(), {
+            headers: { "Cache-Control": "private, no-store" },
+          }),
+        ),
     },
   },
 });

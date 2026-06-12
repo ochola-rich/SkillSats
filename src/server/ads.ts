@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db, runSerializable } from "../lib/db.server";
 import { requireAuth, requireRole } from "../lib/auth.server";
-import { calculateAdViewerReward, hasRemainingAdBudget } from "../lib/domain";
+import { calculateAdViewerReward, hasRemainingAdBudget, isAdAvailableToUser } from "../lib/domain";
 import { adIdSchema, createAdSchema } from "../lib/schemas";
 
 // --- CREATE AD (ADVERTISER only) ---
@@ -27,21 +27,19 @@ export const createAd = createServerFn({ method: "POST" })
 // Returns a random active Ad that still has remaining budget.
 // An ad has remaining budget when: spentSats + rewardSats <= budgetSats
 // Returns null if no ads are available (frontend should show "check back soon").
-export const getNextAd = createServerFn({ method: "GET" }).handler(async () => {
-  const ads = await db.ad.findMany({
-    where: {
-      active: true,
-      // Filter where budget has not been exhausted
-      // spentSats + rewardSats <= budgetSats means:
-      // spentSats <= budgetSats - rewardSats
-      // Prisma doesn't support column-to-column comparison natively, use raw or filter post-query
-    },
-  });
+export const getNextAd = createServerFn({ method: "POST" }).handler(async () => {
+  const user = await requireAuth();
+  const cooldownStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const [ads, recentWatches] = await Promise.all([
+    db.ad.findMany({ where: { active: true } }),
+    db.adWatch.findMany({
+      where: { userId: user.id, watchedAt: { gte: cooldownStart } },
+      select: { adId: true },
+    }),
+  ]);
+  const recentlyWatchedAdIds = new Set(recentWatches.map((watch) => watch.adId));
 
-  // Filter in JS: only ads with remaining budget
-  const available = ads.filter((ad) =>
-    hasRemainingAdBudget(ad.spentSats, ad.rewardSats, ad.budgetSats),
-  );
+  const available = ads.filter((ad) => isAdAvailableToUser(ad, recentlyWatchedAdIds));
   if (available.length === 0) return null;
 
   // Pick a random ad from the available pool
@@ -99,7 +97,7 @@ export const markAdWatched = createServerFn({ method: "POST" })
   });
 
 // --- GET USER AD WATCH HISTORY ---
-export const getAdWatchHistory = createServerFn({ method: "GET" }).handler(async () => {
+export const getAdWatchHistory = createServerFn({ method: "POST" }).handler(async () => {
   const user = await requireAuth();
   const history = await db.adWatch.findMany({
     where: { userId: user.id },

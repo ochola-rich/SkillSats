@@ -62,7 +62,7 @@ export const purchaseVideo = createServerFn({ method: "POST" })
 // Revenue split:
 //   - Creator receives 90% of paidSats (credited to their custodial balanceSats)
 //   - Platform keeps 10% (no DB record needed for hackathon — just don't credit it)
-export const checkInvoiceStatus = createServerFn({ method: "GET" })
+export const checkInvoiceStatus = createServerFn({ method: "POST" })
   .validator(invoiceStatusSchema)
   .handler(async ({ data }) => {
     const user = await requireAuth();

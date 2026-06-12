@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "../lib/db.server";
 import { requireAuth, requireRole } from "../lib/auth.server";
-import { getLndClient, normalizeLndError } from "../lib/lnd.server";
+import { getLndClient, normalizeLndError, sendLndPayment } from "../lib/lnd.server";
 import { satsToUsd } from "../lib/domain";
 import { withdrawSchema } from "../lib/schemas";
 
 // --- GET BALANCE ---
-export const getBalance = createServerFn({ method: "GET" }).handler(async () => {
+export const getBalance = createServerFn({ method: "POST" }).handler(async () => {
   const user = await requireAuth();
   return {
     balanceSats: user.balanceSats,
@@ -47,14 +47,11 @@ export const withdrawFunds = createServerFn({ method: "POST" })
       // Step 2: Send the payment via LND
       // For exact-amount invoices, omit the `amt` field.
       // For zero-amount invoices, pass `amt: data.amount_sats`.
-      const { data: paymentData } = await lnd.post("/v1/channels/transactions", {
-        payment_request: data.payment_request,
-        // amt: data.amount_sats, // uncomment for zero-amount invoices
-      });
+      const payment = await sendLndPayment(lnd, data.payment_request);
 
       return {
         success: true,
-        payment_hash: paymentData.payment_hash,
+        payment_hash: payment.paymentHash,
         amount_sats: data.amount_sats,
       };
     } catch {
