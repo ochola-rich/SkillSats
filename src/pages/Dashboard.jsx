@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import client from '../api/client';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import client from "../api/client";
 
 export default function Dashboard() {
   const { user, refreshUser } = useAuth();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
- 
+
   // Upload Form State
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     priceSats: 0,
     isFree: false,
-    courseId: '',
-    file: null
+    courseId: "",
+    file: null,
   });
   const [isUploading, setIsUploading] = useState(false);
 
@@ -25,10 +25,10 @@ export default function Dashboard() {
   const fetchCreatorData = async () => {
     try {
       // Assuming backend returns creator's videos with purchase counts
-      const { data } = await client.get('/api/videos?creatorId=me');
+      const { data } = await client.get("/api/videos?creatorId=me");
       setVideos(data);
     } catch (error) {
-      console.error('Failed to load videos', error);
+      console.error("Failed to load videos", error);
     } finally {
       setLoading(false);
     }
@@ -36,36 +36,43 @@ export default function Dashboard() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked, files } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value
+      [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value,
     }));
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!formData.file) return alert("Please select a video file.");
-   
+
     setIsUploading(true);
     const uploadData = new FormData();
-    uploadData.append('title', formData.title);
-    uploadData.append('description', formData.description);
-    uploadData.append('priceSats', formData.priceSats);
-    uploadData.append('isFree', formData.isFree);
-    uploadData.append('courseId', formData.courseId);
-    uploadData.append('file', formData.file);
+    uploadData.append("title", formData.title);
+    uploadData.append("description", formData.description);
+    uploadData.append("priceSats", formData.priceSats);
+    uploadData.append("isFree", formData.isFree);
+    uploadData.append("courseId", formData.courseId);
+    uploadData.append("file", formData.file);
 
     try {
-      await client.post('/api/videos', uploadData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      await client.post("/api/videos", uploadData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      alert('Video uploaded successfully!');
+      alert("Video uploaded successfully!");
       fetchCreatorData(); // Refresh list
       // Reset form
-      setFormData({ title: '', description: '', priceSats: 0, isFree: false, courseId: '', file: null });
+      setFormData({
+        title: "",
+        description: "",
+        priceSats: 0,
+        isFree: false,
+        courseId: "",
+        file: null,
+      });
     } catch (error) {
-      console.error('Upload failed', error);
-      alert('Failed to upload video.');
+      console.error("Upload failed", error);
+      alert("Failed to upload video.");
     } finally {
       setIsUploading(false);
     }
@@ -83,7 +90,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg">
           <p className="text-gray-400 text-sm font-medium mb-1">Total Balance</p>
-          <p className="text-4xl font-bold text-yellow-400">⚡ {user?.balanceSats?.toLocaleString() || 0}</p>
+          <p className="text-4xl font-bold text-yellow-400">
+            ⚡ {user?.balanceSats?.toLocaleString() || 0}
+          </p>
         </div>
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg">
           <p className="text-gray-400 text-sm font-medium mb-1">Videos Uploaded</p>
@@ -102,32 +111,80 @@ export default function Dashboard() {
           <form onSubmit={handleUpload} className="space-y-4 text-white">
             <div>
               <label className="block text-sm text-gray-400 mb-1">Title</label>
-              <input required type="text" name="title" value={formData.title} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded p-2" />
+              <input
+                required
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                className="w-full bg-gray-950 border border-gray-800 rounded p-2"
+              />
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Description</label>
-              <textarea required name="description" value={formData.description} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded p-2" rows="3" />
+              <textarea
+                required
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="w-full bg-gray-950 border border-gray-800 rounded p-2"
+                rows="3"
+              />
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Course ID</label>
-              <input required type="text" name="courseId" value={formData.courseId} onChange={handleInputChange} className="w-full bg-gray-950 border border-gray-800 rounded p-2" />
+              <input
+                required
+                type="text"
+                name="courseId"
+                value={formData.courseId}
+                onChange={handleInputChange}
+                className="w-full bg-gray-950 border border-gray-800 rounded p-2"
+              />
             </div>
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <label className="block text-sm text-gray-400 mb-1">Price (Sats)</label>
-                <input type="number" name="priceSats" value={formData.priceSats} onChange={handleInputChange} disabled={formData.isFree} className="w-full bg-gray-950 border border-gray-800 rounded p-2 disabled:opacity-50" />
+                <input
+                  type="number"
+                  name="priceSats"
+                  value={formData.priceSats}
+                  onChange={handleInputChange}
+                  disabled={formData.isFree}
+                  className="w-full bg-gray-950 border border-gray-800 rounded p-2 disabled:opacity-50"
+                />
               </div>
               <div className="flex items-center gap-2 mt-6">
-                <input type="checkbox" name="isFree" id="isFree" checked={formData.isFree} onChange={handleInputChange} className="w-4 h-4" />
-                <label htmlFor="isFree" className="text-sm">Free Sample?</label>
+                <input
+                  type="checkbox"
+                  name="isFree"
+                  id="isFree"
+                  checked={formData.isFree}
+                  onChange={handleInputChange}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="isFree" className="text-sm">
+                  Free Sample?
+                </label>
               </div>
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Video File</label>
-              <input required type="file" accept="video/*" name="file" onChange={handleInputChange} className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-gray-800 file:text-white" />
+              <input
+                required
+                type="file"
+                accept="video/*"
+                name="file"
+                onChange={handleInputChange}
+                className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-gray-800 file:text-white"
+              />
             </div>
-            <button disabled={isUploading} type="submit" className="w-full bg-yellow-400 text-gray-950 font-bold py-2 rounded hover:bg-yellow-500 disabled:opacity-50">
-              {isUploading ? 'Uploading...' : 'Upload Video'}
+            <button
+              disabled={isUploading}
+              type="submit"
+              className="w-full bg-yellow-400 text-gray-950 font-bold py-2 rounded hover:bg-yellow-500 disabled:opacity-50"
+            >
+              {isUploading ? "Uploading..." : "Upload Video"}
             </button>
           </form>
         </div>
@@ -139,15 +196,22 @@ export default function Dashboard() {
             <p className="text-gray-400">No videos uploaded yet.</p>
           ) : (
             <div className="space-y-4">
-              {videos.map(video => (
-                <div key={video.id} className="flex items-center justify-between p-4 bg-gray-950 border border-gray-800 rounded-lg">
+              {videos.map((video) => (
+                <div
+                  key={video.id}
+                  className="flex items-center justify-between p-4 bg-gray-950 border border-gray-800 rounded-lg"
+                >
                   <div>
                     <h3 className="font-bold text-white">{video.title}</h3>
                     <p className="text-sm text-gray-400">Course: {video.courseId}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-yellow-400 font-bold">{video.isFree ? 'FREE' : `${video.priceSats} sats`}</p>
-                    <p className="text-sm text-gray-400">{video._count?.purchases || 0} purchases</p>
+                    <p className="text-yellow-400 font-bold">
+                      {video.isFree ? "FREE" : `${video.priceSats} sats`}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {video._count?.purchases || 0} purchases
+                    </p>
                   </div>
                 </div>
               ))}
@@ -158,6 +222,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-
-

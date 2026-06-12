@@ -77,9 +77,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SatsLearn — Learn anything. Pay in sats." },
-      { name: "description", content: "Peer-to-peer education marketplace powered by Bitcoin Lightning." },
-      { property: "og:title", content: "SatsLearn" },
+      { title: "SkillSats — Learn anything. Pay in sats." },
+      {
+        name: "description",
+        content: "Peer-to-peer education marketplace powered by Bitcoin Lightning.",
+      },
+      { property: "og:title", content: "SkillSats" },
       { property: "og:description", content: "Learn anything. Pay in sats." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -193,7 +196,7 @@ function RootLayout() {
       <div className="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <span className="text-4xl text-yellow-400 animate-pulse font-extrabold">⚡</span>
-          <span className="text-sm text-gray-400">Loading SatsLearn...</span>
+          <span className="text-sm text-gray-400">Loading SkillSats...</span>
         </div>
       </div>
     );
@@ -207,7 +210,7 @@ function RootLayout() {
           <div className="flex items-center gap-6">
             <Link to="/" className="text-xl font-bold flex items-center gap-1.5 hover:opacity-90">
               <span className="text-yellow-400 font-extrabold">⚡</span>
-              <span>SatsLearn</span>
+              <span>SkillSats</span>
             </Link>
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
               <Link to="/" className="text-gray-300 hover:text-yellow-400 transition-colors">
@@ -216,7 +219,10 @@ function RootLayout() {
               <Link to="/earn" className="text-gray-300 hover:text-yellow-400 transition-colors">
                 Earn Sats
               </Link>
-              <Link to="/dashboard" className="text-gray-300 hover:text-yellow-400 transition-colors">
+              <Link
+                to="/dashboard"
+                className="text-gray-300 hover:text-yellow-400 transition-colors"
+              >
                 Dashboard
               </Link>
               <Link to="/wallet" className="text-gray-300 hover:text-yellow-400 transition-colors">
@@ -231,7 +237,9 @@ function RootLayout() {
                   <span>⚡</span>
                   <span>{(user.balanceSats ?? 0).toLocaleString()} sats</span>
                 </div>
-                <span className="text-xs text-gray-400 hidden sm:inline">@{user.username} ({user.role})</span>
+                <span className="text-xs text-gray-400 hidden sm:inline">
+                  @{user.username} ({user.role})
+                </span>
                 <button
                   onClick={logout}
                   className="bg-gray-850 hover:bg-gray-800 text-gray-350 px-3 py-1.5 rounded text-xs border border-gray-700 transition-all cursor-pointer"
@@ -287,7 +295,9 @@ function ScreenSwitcher() {
           key={s.to}
           to={s.to}
           className="rounded-lg px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
-          activeProps={{ className: "rounded-lg px-3 py-1 text-xs font-semibold bg-yellow-400 text-gray-950" }}
+          activeProps={{
+            className: "rounded-lg px-3 py-1 text-xs font-semibold bg-yellow-400 text-gray-950",
+          }}
           activeOptions={{ exact: true }}
         >
           {s.label}
@@ -296,4 +306,3 @@ function ScreenSwitcher() {
     </div>
   );
 }
-

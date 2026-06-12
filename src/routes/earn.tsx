@@ -6,8 +6,11 @@ import { useAuth } from "../context/AuthContext";
 export const Route = createFileRoute("/earn")({
   head: () => ({
     meta: [
-      { title: "SatsLearn — Earn Sats" },
-      { name: "description", content: "Watch curated ads, learn, and stack sats instantly via Lightning." },
+      { title: "SkillSats — Earn Sats" },
+      {
+        name: "description",
+        content: "Watch curated ads, learn, and stack sats instantly via Lightning.",
+      },
     ],
   }),
   component: EarnComponent,
@@ -116,7 +119,9 @@ function EarnComponent() {
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         video.no-seek::-webkit-media-controls-timeline {
           display: none !important;
         }
@@ -126,7 +131,9 @@ function EarnComponent() {
         video.no-seek::-webkit-media-controls-time-remaining-display {
           display: none !important;
         }
-      `}} />
+      `,
+        }}
+      />
 
       {/* Session Earnings Counter */}
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex justify-between items-center">
@@ -166,7 +173,9 @@ function EarnComponent() {
           </div>
         ) : (
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-200 text-sm border-b border-gray-850 pb-2">{ad.title}</h3>
+            <h3 className="font-bold text-gray-200 text-sm border-b border-gray-850 pb-2">
+              {ad.title}
+            </h3>
 
             {/* Video Player */}
             <div className="relative aspect-video bg-black rounded-lg overflow-hidden border border-gray-850">
@@ -195,7 +204,9 @@ function EarnComponent() {
                   <span className="text-3xl text-yellow-400 font-extrabold animate-bounce">
                     +{lastEarned} sats
                   </span>
-                  <span className="text-xs text-gray-400">Claimed successfully! Loading next ad...</span>
+                  <span className="text-xs text-gray-400">
+                    Claimed successfully! Loading next ad...
+                  </span>
                 </div>
               )}
             </div>
@@ -209,10 +220,10 @@ function EarnComponent() {
               {claiming
                 ? "Claiming..."
                 : showRewardAnimation
-                ? "Reward Claimed!"
-                : videoEnded
-                ? `Claim ${ad.rewardSats} sats`
-                : "Watch video to claim rewards"}
+                  ? "Reward Claimed!"
+                  : videoEnded
+                    ? `Claim ${ad.rewardSats} sats`
+                    : "Watch video to claim rewards"}
             </button>
             {error && <p className="text-xs text-red-400 text-center">{error}</p>}
           </div>

@@ -11,10 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WalletRouteImport } from './routes/wallet'
 import { Route as UploadRouteImport } from './routes/upload'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as EarnRouteImport } from './routes/earn'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CourseRouteImport } from './routes/course'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LearnVideoIdRouteImport } from './routes/learn.$videoId'
 
 const WalletRoute = WalletRouteImport.update({
   id: '/wallet',
@@ -24,6 +27,16 @@ const WalletRoute = WalletRouteImport.update({
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EarnRoute = EarnRouteImport.update({
@@ -46,22 +59,33 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LearnVideoIdRoute = LearnVideoIdRouteImport.update({
+  id: '/learn/$videoId',
+  path: '/learn/$videoId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/course': typeof CourseRoute
   '/dashboard': typeof DashboardRoute
   '/earn': typeof EarnRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/upload': typeof UploadRoute
   '/wallet': typeof WalletRoute
+  '/learn/$videoId': typeof LearnVideoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/course': typeof CourseRoute
   '/dashboard': typeof DashboardRoute
   '/earn': typeof EarnRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/upload': typeof UploadRoute
   '/wallet': typeof WalletRoute
+  '/learn/$videoId': typeof LearnVideoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,22 +93,46 @@ export interface FileRoutesById {
   '/course': typeof CourseRoute
   '/dashboard': typeof DashboardRoute
   '/earn': typeof EarnRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/upload': typeof UploadRoute
   '/wallet': typeof WalletRoute
+  '/learn/$videoId': typeof LearnVideoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/course' | '/dashboard' | '/earn' | '/upload' | '/wallet'
+  fullPaths:
+    | '/'
+    | '/course'
+    | '/dashboard'
+    | '/earn'
+    | '/login'
+    | '/register'
+    | '/upload'
+    | '/wallet'
+    | '/learn/$videoId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/course' | '/dashboard' | '/earn' | '/upload' | '/wallet'
+  to:
+    | '/'
+    | '/course'
+    | '/dashboard'
+    | '/earn'
+    | '/login'
+    | '/register'
+    | '/upload'
+    | '/wallet'
+    | '/learn/$videoId'
   id:
     | '__root__'
     | '/'
     | '/course'
     | '/dashboard'
     | '/earn'
+    | '/login'
+    | '/register'
     | '/upload'
     | '/wallet'
+    | '/learn/$videoId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -92,8 +140,11 @@ export interface RootRouteChildren {
   CourseRoute: typeof CourseRoute
   DashboardRoute: typeof DashboardRoute
   EarnRoute: typeof EarnRoute
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
   UploadRoute: typeof UploadRoute
   WalletRoute: typeof WalletRoute
+  LearnVideoIdRoute: typeof LearnVideoIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -110,6 +161,20 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/upload'
       preLoaderRoute: typeof UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/earn': {
@@ -140,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/learn/$videoId': {
+      id: '/learn/$videoId'
+      path: '/learn/$videoId'
+      fullPath: '/learn/$videoId'
+      preLoaderRoute: typeof LearnVideoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -148,9 +220,22 @@ const rootRouteChildren: RootRouteChildren = {
   CourseRoute: CourseRoute,
   DashboardRoute: DashboardRoute,
   EarnRoute: EarnRoute,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
   UploadRoute: UploadRoute,
   WalletRoute: WalletRoute,
+  LearnVideoIdRoute: LearnVideoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

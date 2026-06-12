@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 
 export default function EarnPage() {
   // --- State Management ---
@@ -17,9 +17,9 @@ export default function EarnPage() {
     setLoading(true);
     setVideoProgress(0);
     setCanClaim(false);
-    
+
     try {
-      const response = await fetch('/api/ads/next');
+      const response = await fetch("/api/ads/next");
       if (response.ok) {
         const data = await response.json();
         // Check if data is empty or has no id
@@ -44,8 +44,8 @@ export default function EarnPage() {
 
     try {
       const response = await fetch(`/api/ads/${currentAd.id}/watched`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
 
       if (response.ok) {
@@ -53,12 +53,12 @@ export default function EarnPage() {
 
         // 1. Trigger yellow "+X sats" animation
         setAnimationText(`+${earnedSats} sats`);
-        
+
         // 2. Update session total counter
-        setSessionTotal(prev => prev + earnedSats);
-        
+        setSessionTotal((prev) => prev + earnedSats);
+
         // 3. Update the navbar balance display
-        setNavbarBalance(prev => prev + earnedSats);
+        setNavbarBalance((prev) => prev + earnedSats);
 
         // 4. Wait 3 seconds, then clear animation, fetch next ad, and reset UI
         setTimeout(() => {
@@ -100,8 +100,11 @@ export default function EarnPage() {
     <div className="earn-page-container">
       {/* Fake Navbar to demonstrate balance updates */}
       <nav className="navbar">
-        <span>SatsLearn Logo</span> | 
-        <span> Balance: <strong>{navbarBalance} sats</strong></span>
+        <span>SkillSats Logo</span> |
+        <span>
+          {" "}
+          Balance: <strong>{navbarBalance} sats</strong>
+        </span>
       </nav>
 
       <hr />
@@ -115,7 +118,7 @@ export default function EarnPage() {
 
       {/* Reward Animation Overlay/Display */}
       {animationText && (
-        <div className="sats-animation" style={{ color: 'yellow', fontWeight: 'bold' }}>
+        <div className="sats-animation" style={{ color: "yellow", fontWeight: "bold" }}>
           {animationText}
         </div>
       )}
@@ -133,22 +136,22 @@ export default function EarnPage() {
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleVideoEnded}
             width="100%"
-            style={{ pointerEvents: 'none' }} /* Extra layer to prevent manual timeline clicking */
+            style={{ pointerEvents: "none" }} /* Extra layer to prevent manual timeline clicking */
           />
 
           {/* Custom Progress Bar */}
-          <div className="progress-bar-container" style={{ width: '100%', background: '#ccc', height: '10px' }}>
-            <div 
-              className="progress-bar-fill" 
-              style={{ width: `${videoProgress}%`, background: 'green', height: '100%' }}
+          <div
+            className="progress-bar-container"
+            style={{ width: "100%", background: "#ccc", height: "10px" }}
+          >
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${videoProgress}%`, background: "green", height: "100%" }}
             />
           </div>
 
           {/* Claim Button */}
-          <button 
-            onClick={claimReward} 
-            disabled={!canClaim || animationText !== null}
-          >
+          <button onClick={claimReward} disabled={!canClaim || animationText !== null}>
             Claim {currentAd.rewardAmount} sats
           </button>
         </div>

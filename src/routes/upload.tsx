@@ -4,9 +4,9 @@ import html from "../screens/upload.html";
 export const Route = createFileRoute("/upload")({
   head: () => ({
     meta: [
-      { title: "SatsLearn — Upload Course" },
+      { title: "SkillSats — Upload Course" },
       { name: "description", content: "Publish a new course and earn sats." },
-      { property: "og:title", content: "Upload Course — SatsLearn" },
+      { property: "og:title", content: "Upload Course — SkillSats" },
       { property: "og:description", content: "Publish a new course and start earning in sats." },
     ],
   }),

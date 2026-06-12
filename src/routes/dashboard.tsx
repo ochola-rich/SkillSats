@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "SatsLearn Creator Dashboard" },
+      { title: "SkillSats Creator Dashboard" },
       { name: "description", content: "Track your courses, earnings, and learners." },
     ],
   }),
@@ -60,7 +60,7 @@ function DashboardComponent() {
 
   // Filter creator's videos
   const creatorVideos = videos.filter(
-    (v) => v.creatorId === user?.id || v.creatorUsername === user?.username
+    (v) => v.creatorId === user?.id || v.creatorUsername === user?.username,
   );
 
   // Helper to simulate stable purchase counts for demo
@@ -155,17 +155,23 @@ function DashboardComponent() {
       {/* Creator stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Creator Balance</span>
+          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+            Creator Balance
+          </span>
           <p className="text-3xl font-bold text-yellow-400 font-mono">
             ⚡ {(user?.balanceSats ?? 0).toLocaleString()} sats
           </p>
         </div>
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Videos Uploaded</span>
+          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+            Videos Uploaded
+          </span>
           <p className="text-3xl font-bold text-gray-100 font-mono">{creatorVideos.length}</p>
         </div>
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Purchases</span>
+          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+            Total Purchases
+          </span>
           <p className="text-3xl font-bold text-gray-100 font-mono">{totalPurchases}</p>
         </div>
       </div>
@@ -173,8 +179,10 @@ function DashboardComponent() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Upload Form */}
         <div className="lg:col-span-1 bg-gray-900 border border-gray-800 p-6 rounded-lg h-fit space-y-6">
-          <h3 className="text-lg font-bold text-gray-100 border-b border-gray-800 pb-3">Upload New Video</h3>
-          
+          <h3 className="text-lg font-bold text-gray-100 border-b border-gray-800 pb-3">
+            Upload New Video
+          </h3>
+
           {error && (
             <div className="bg-red-950/20 border border-red-800 text-red-200 p-3 rounded text-xs">
               {error}
@@ -199,7 +207,9 @@ function DashboardComponent() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Description</label>
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
+                Description
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -210,7 +220,9 @@ function DashboardComponent() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Course ID</label>
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
+                Course ID
+              </label>
               <input
                 type="text"
                 value={courseId}
@@ -229,14 +241,19 @@ function DashboardComponent() {
                 onChange={(e) => setIsFree(e.target.checked)}
                 className="w-4 h-4 bg-gray-950 border-gray-800 rounded text-yellow-400 focus:ring-yellow-400"
               />
-              <label htmlFor="is-free" className="text-xs font-bold text-gray-300 uppercase cursor-pointer">
+              <label
+                htmlFor="is-free"
+                className="text-xs font-bold text-gray-300 uppercase cursor-pointer"
+              >
                 Is this a free sample?
               </label>
             </div>
 
             {!isFree && (
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Price in Sats</label>
+                <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
+                  Price in Sats
+                </label>
                 <input
                   type="number"
                   value={priceSats}
@@ -249,7 +266,9 @@ function DashboardComponent() {
             )}
 
             <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Video File</label>
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
+                Video File
+              </label>
               <input
                 type="file"
                 id="video-file"
@@ -272,12 +291,12 @@ function DashboardComponent() {
 
         {/* Video List */}
         <div className="lg:col-span-2 bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-6">
-          <h3 className="text-lg font-bold text-gray-100 border-b border-gray-800 pb-3">My Uploads</h3>
-          
+          <h3 className="text-lg font-bold text-gray-100 border-b border-gray-800 pb-3">
+            My Uploads
+          </h3>
+
           {loading ? (
-            <div className="text-center py-8 text-gray-400 text-sm">
-              Loading creator videos...
-            </div>
+            <div className="text-center py-8 text-gray-400 text-sm">Loading creator videos...</div>
           ) : creatorVideos.length === 0 ? (
             <div className="text-center py-12 text-gray-500 text-sm">
               You haven't uploaded any videos yet.

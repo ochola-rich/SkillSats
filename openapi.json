@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "SatsLearn API",
-    "description": "API for SatsLearn, a peer-to-peer education platform utilizing the Lightning Network for creator payments and ad rewards.",
+    "title": "SkillSats API",
+    "description": "API for SkillSats, a peer-to-peer education platform utilizing the Lightning Network for creator payments and ad rewards.",
     "version": "1.0.0"
   },
   "servers": [

@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 export const Route = createFileRoute("/wallet")({
   head: () => ({
     meta: [
-      { title: "SatsLearn Wallet — Bitcoin Lightning" },
+      { title: "SkillSats Wallet — Bitcoin Lightning" },
       { name: "description", content: "Manage your sats balance and Lightning transactions." },
     ],
   }),
@@ -85,15 +85,23 @@ function WalletComponent() {
       {/* Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Available Balance</span>
+          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+            Available Balance
+          </span>
           <p className="text-3xl font-bold text-yellow-400 font-mono">
             ⚡ {balanceSats.toLocaleString()} sats
           </p>
         </div>
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-2">
-          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Estimated USD Value</span>
+          <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+            Estimated USD Value
+          </span>
           <p className="text-3xl font-bold text-gray-100 font-mono">
-            ${usdValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            $
+            {usdValue.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </p>
           <p className="text-[10px] text-gray-500 font-mono">Hardcoded rate: 1 sat = $0.00065</p>
         </div>
@@ -102,7 +110,9 @@ function WalletComponent() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Withdrawal Form */}
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-6">
-          <h3 className="text-sm font-bold text-gray-100 border-b border-gray-800 pb-3">Withdraw Sats</h3>
+          <h3 className="text-sm font-bold text-gray-100 border-b border-gray-800 pb-3">
+            Withdraw Sats
+          </h3>
 
           {error && (
             <div className="bg-red-950/20 border border-red-800 text-red-200 p-3 rounded text-xs">
@@ -137,7 +147,9 @@ function WalletComponent() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">Amount to Withdraw (sats)</label>
+              <label className="block text-xs font-bold text-gray-300 uppercase mb-1">
+                Amount to Withdraw (sats)
+              </label>
               <input
                 type="number"
                 value={amountSats || ""}
@@ -160,7 +172,9 @@ function WalletComponent() {
 
         {/* Ad Watch History */}
         <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg space-y-6">
-          <h3 className="text-sm font-bold text-gray-100 border-b border-gray-800 pb-3">AdWatch History</h3>
+          <h3 className="text-sm font-bold text-gray-100 border-b border-gray-800 pb-3">
+            AdWatch History
+          </h3>
 
           {adHistory.length === 0 ? (
             <div className="text-center py-8 text-gray-500 text-sm">

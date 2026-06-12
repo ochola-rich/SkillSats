@@ -5,8 +5,11 @@ import { apiClient } from "../api/client";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SatsLearn — Learn anything. Pay in sats." },
-      { name: "description", content: "Browse peer-to-peer courses on Bitcoin, dev, design, and more — paid in sats." },
+      { title: "SkillSats — Learn anything. Pay in sats." },
+      {
+        name: "description",
+        content: "Browse peer-to-peer courses on Bitcoin, dev, design, and more — paid in sats.",
+      },
     ],
   }),
   component: IndexComponent,
@@ -55,7 +58,8 @@ function IndexComponent() {
           <span className="text-yellow-400">Pay in sats.</span>
         </h1>
         <p className="text-gray-400 text-lg">
-          The peer-to-peer education platform powered by the Bitcoin Lightning Network. Master new skills or share your expertise.
+          The peer-to-peer education platform powered by the Bitcoin Lightning Network. Master new
+          skills or share your expertise.
         </p>
       </section>
 
@@ -90,20 +94,20 @@ function IndexComponent() {
               >
                 {/* Thumbnail Placeholder */}
                 <div className="h-40 bg-gray-950 flex items-center justify-center border-b border-gray-800/50 group-hover:bg-gray-900 transition-colors">
-                  <span className="text-4xl text-gray-650 group-hover:text-yellow-400 transition-colors font-extrabold">⚡</span>
+                  <span className="text-4xl text-gray-650 group-hover:text-yellow-400 transition-colors font-extrabold">
+                    ⚡
+                  </span>
                 </div>
-                
+
                 {/* Content */}
                 <div className="p-4 flex flex-col justify-between flex-grow space-y-4">
                   <div className="space-y-1">
                     <h3 className="font-bold text-gray-200 line-clamp-2 group-hover:text-yellow-400 transition-colors text-sm">
                       {video.title}
                     </h3>
-                    <p className="text-xs text-gray-400">
-                      @{video.creatorUsername || "creator"}
-                    </p>
+                    <p className="text-xs text-gray-400">@{video.creatorUsername || "creator"}</p>
                   </div>
-                  
+
                   <div className="flex justify-between items-center pt-2">
                     {video.priceSats === 0 || video.isFree ? (
                       <span className="bg-green-950 text-green-400 border border-green-850 px-2 py-0.5 rounded text-xs font-bold font-mono">
@@ -127,4 +131,3 @@ function IndexComponent() {
     </div>
   );
 }
-

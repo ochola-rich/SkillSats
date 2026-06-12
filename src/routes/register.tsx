@@ -6,8 +6,8 @@ import { apiClient } from "../api/client";
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "SatsLearn — Register" },
-      { name: "description", content: "Create a new SatsLearn account" },
+      { title: "SkillSats — Register" },
+      { name: "description", content: "Create a new SkillSats account" },
     ],
   }),
   component: RegisterComponent,
@@ -47,8 +47,8 @@ function RegisterComponent() {
 
   return (
     <div className="max-w-md mx-auto my-12 p-6 bg-gray-900 border border-gray-800 rounded-lg shadow-xl">
-      <h2 className="text-2xl font-bold mb-6 text-center text-yellow-400">Join SatsLearn</h2>
-      
+      <h2 className="text-2xl font-bold mb-6 text-center text-yellow-400">Join SkillSats</h2>
+
       {error && (
         <div className="bg-red-950/50 border border-red-800 text-red-200 p-3 rounded mb-4 text-sm">
           {error}

@@ -7,7 +7,7 @@ import { QRCodeSVG } from "qrcode.react";
 export const Route = createFileRoute("/learn/$videoId")({
   head: () => ({
     meta: [
-      { title: "SatsLearn — Video Player" },
+      { title: "SkillSats — Video Player" },
       { name: "description", content: "Watch and learn, paid in sats." },
     ],
   }),
@@ -35,7 +35,11 @@ function VideoPlayerComponent() {
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
 
   const [purchaseLoading, setPurchaseLoading] = useState(false);
-  const [invoice, setInvoice] = useState<{ payment_request: string; r_hash: string; amount_sats: number } | null>(null);
+  const [invoice, setInvoice] = useState<{
+    payment_request: string;
+    r_hash: string;
+    amount_sats: number;
+  } | null>(null);
   const [isSettled, setIsSettled] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -102,7 +106,9 @@ function VideoPlayerComponent() {
 
     pollIntervalRef.current = setInterval(async () => {
       try {
-        const res = await apiClient.get<{ settled: boolean; videoUrl?: string }>(`/api/invoices/${r_hash}/status`);
+        const res = await apiClient.get<{ settled: boolean; videoUrl?: string }>(
+          `/api/invoices/${r_hash}/status`,
+        );
         if (res.data.settled) {
           if (pollIntervalRef.current) {
             clearInterval(pollIntervalRef.current);
@@ -149,12 +155,7 @@ function VideoPlayerComponent() {
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="relative aspect-video bg-black rounded-lg overflow-hidden border border-gray-800">
         {hasAccess && videoUrl ? (
-          <video
-            src={videoUrl}
-            controls
-            className="w-full h-full object-contain"
-            autoPlay
-          />
+          <video src={videoUrl} controls className="w-full h-full object-contain" autoPlay />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-gray-950/90 text-center">
             {!invoice ? (
@@ -163,7 +164,8 @@ function VideoPlayerComponent() {
                 <h3 className="text-xl font-bold text-gray-100">{video.title}</h3>
                 <p className="text-sm text-gray-400">
                   This premium video requires a purchase of{" "}
-                  <span className="text-yellow-400 font-bold">{video.priceSats} sats</span> to unlock.
+                  <span className="text-yellow-400 font-bold">{video.priceSats} sats</span> to
+                  unlock.
                 </p>
                 <button
                   onClick={handleUnlock}
