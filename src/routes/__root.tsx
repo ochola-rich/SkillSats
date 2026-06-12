@@ -171,13 +171,17 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { AuthProvider } from "../context/auth";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ScreenSwitcher />
-      <Outlet />
+      <AuthProvider>
+        <ScreenSwitcher />
+        <Outlet />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
