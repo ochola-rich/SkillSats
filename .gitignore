@@ -33,7 +33,6 @@ dist-ssr
 
 temp/
 npm-cache/
-.local-lightning/
 # Ignore all package manager lockfiles for the hackathon
 bun.lock
 bun.lockb

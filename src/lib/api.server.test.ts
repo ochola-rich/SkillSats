@@ -17,6 +17,20 @@ test("maps application error codes to JSON HTTP responses", async () => {
   });
 });
 
+test("reports missing Lightning configuration as service unavailable", async () => {
+  const response = await withApiErrors(async () => {
+    throw new Error("LND_NOT_CONFIGURED");
+  });
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    error: {
+      code: "LND_NOT_CONFIGURED",
+      message: "Lnd Not Configured",
+    },
+  });
+});
+
 test("rejects malformed JSON with the standard error envelope", async () => {
   const request = new Request("http://localhost:5173/api/auth/register", {
     method: "POST",

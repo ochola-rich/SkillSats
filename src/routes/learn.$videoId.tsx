@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "../hooks/use-auth";
-import { getErrorMessage, hasErrorCode } from "../lib/errors";
+import { getErrorMessage, hasErrorCode, isLightningUnavailable } from "../lib/errors";
 import { checkInvoiceStatus, purchaseVideo } from "../server/payments";
 import { getVideoAccess, getVideoMeta } from "../server/videos";
 
@@ -74,7 +74,17 @@ function VideoPlayerPage() {
           setVideoUrl(status.videoUrl);
           setPurchasing(false);
         })
-        .catch((caught) => setError(getErrorMessage(caught, "Could not verify payment.")));
+        .catch((caught) => {
+          if (isLightningUnavailable(caught) && pollingRef.current) {
+            clearInterval(pollingRef.current);
+            setPurchasing(false);
+          }
+          setError(
+            isLightningUnavailable(caught)
+              ? "Lightning payments are unavailable in this environment."
+              : getErrorMessage(caught, "Could not verify payment."),
+          );
+        });
     }, 2_000);
   };
 
@@ -86,7 +96,11 @@ function VideoPlayerPage() {
       setInvoice(nextInvoice);
       startPolling(nextInvoice.r_hash);
     } catch (caught) {
-      setError(getErrorMessage(caught, "Could not create a Lightning invoice."));
+      setError(
+        isLightningUnavailable(caught)
+          ? "Lightning payments are unavailable in this environment."
+          : getErrorMessage(caught, "Could not create a Lightning invoice."),
+      );
       setPurchasing(false);
     }
   };

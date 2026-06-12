@@ -1,6 +1,10 @@
 import axios from "axios";
 import https from "node:https";
 
+export function isLndConfigured() {
+  return Boolean(process.env.LND_REST_HOST && process.env.LND_MACAROON);
+}
+
 export function getLndClient() {
   const baseURL = process.env.LND_REST_HOST;
   const macaroon = process.env.LND_MACAROON;
@@ -27,9 +31,19 @@ export function getLndClient() {
 // GET  /v1/getinfo               → node health check
 
 export async function lndHealthCheck() {
-  const lnd = getLndClient();
-  const { data } = await lnd.get("/v1/getinfo");
-  return { alias: data.alias, pubkey: data.identity_pubkey, synced: data.synced_to_chain };
+  try {
+    const { data } = await getLndClient().get("/v1/getinfo");
+    return { alias: data.alias, pubkey: data.identity_pubkey, synced: data.synced_to_chain };
+  } catch (error) {
+    throw normalizeLndError(error);
+  }
+}
+
+export function normalizeLndError(error: unknown) {
+  if (error instanceof Error && error.message.includes("LND_NOT_CONFIGURED")) {
+    return error;
+  }
+  return new Error("LND_UNAVAILABLE");
 }
 
 /**

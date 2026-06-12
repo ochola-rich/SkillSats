@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "../lib/db.server";
 import { requireAuth, requireRole } from "../lib/auth.server";
-import { getLndClient } from "../lib/lnd.server";
+import { getLndClient, normalizeLndError } from "../lib/lnd.server";
 import { satsToUsd } from "../lib/domain";
 import { withdrawSchema } from "../lib/schemas";
 
@@ -22,10 +22,16 @@ export const withdrawFunds = createServerFn({ method: "POST" })
   .validator(withdrawSchema)
   .handler(async ({ data }) => {
     const user = await requireRole("CREATOR");
-    const lnd = getLndClient();
-    const { data: decodedInvoice } = await lnd.get(
-      `/v1/payreq/${encodeURIComponent(data.payment_request)}`,
-    );
+    let lnd;
+    let decodedInvoice;
+    try {
+      lnd = getLndClient();
+      ({ data: decodedInvoice } = await lnd.get(
+        `/v1/payreq/${encodeURIComponent(data.payment_request)}`,
+      ));
+    } catch (error) {
+      throw normalizeLndError(error);
+    }
     if (Number(decodedInvoice.num_satoshis) !== data.amount_sats) {
       throw new Error("INVOICE_AMOUNT_MISMATCH");
     }

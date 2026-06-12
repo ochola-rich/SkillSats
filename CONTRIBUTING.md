@@ -10,12 +10,11 @@ Install the following tools:
 - Node.js 22.12 or newer
 - npm
 - Docker with Docker Compose
-- Bitcoin Core (`bitcoind` and `bitcoin-cli`)
-- LND (`lnd` and `lncli`)
 
-Bitcoin Core and LND are system dependencies for development integration testing. The automated
-unit, type, lint, and build checks do not start them, but contributors need both to test the complete
-payment workflow locally.
+Bitcoin Core and LND are not required to install dependencies, start the application, or run the
+automated checks. Lightning configuration is optional; without it, paid video purchases, invoice
+settlement polling, and withdrawals report that Lightning is unavailable while the rest of the
+application continues to work.
 
 ## Install Dependencies
 
@@ -43,224 +42,17 @@ The example config connects to the Docker PostgreSQL service with:
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/skillsats"
 ```
 
-Update the placeholder `JWT_SECRET`, `LND_REST_HOST`, and `LND_MACAROON` values in `.env` as needed.
-The variables serve these purposes:
+Replace `JWT_SECRET` before starting the application. Configure `LND_REST_HOST` and `LND_MACAROON`
+only when connecting to an external LND node for Lightning integration testing.
 
-| Variable        | Purpose                                     |
-| --------------- | ------------------------------------------- |
-| `DATABASE_URL`  | PostgreSQL connection string used by Prisma |
-| `JWT_SECRET`    | Signs authentication cookies                |
-| `LND_REST_HOST` | Base URL for the LND REST API               |
-| `LND_MACAROON`  | Hex-encoded LND macaroon sent with requests |
+| Variable        | Required | Purpose                                     |
+| --------------- | -------- | ------------------------------------------- |
+| `DATABASE_URL`  | Yes      | PostgreSQL connection string used by Prisma |
+| `JWT_SECRET`    | Yes      | Signs authentication cookies                |
+| `LND_REST_HOST` | No       | Base URL for an external LND REST API       |
+| `LND_MACAROON`  | No       | Hex-encoded LND macaroon sent with requests |
 
 Do not commit `.env` files or real Lightning credentials.
-
-## Set Up a Local Lightning Network
-
-Bitcoin Core and LND do not need to be running for `npm test`, `npm run check`, database work,
-authentication, free videos, or ad rewards. They must be running for these development integration
-tests:
-
-| Flow                      | Why LND is needed                                   |
-| ------------------------- | --------------------------------------------------- |
-| Purchase a paid video     | Creates a BOLT11 invoice                            |
-| Poll a purchase           | Checks whether the invoice settled                  |
-| Withdraw creator earnings | Decodes and pays an invoice from an external wallet |
-
-The following setup uses the installed `bitcoind`, `bitcoin-cli`, `lnd`, and `lncli` binaries. It
-runs one Bitcoin Core regtest node and two isolated LND nodes:
-
-- `skillsats`: the node used by the application.
-- `payer`: a test wallet that pays purchases and receives withdrawals.
-
-All local state is written under `.local-lightning/`, which is ignored by Git.
-
-Start Bitcoin Core:
-
-```bash
-mkdir -p .local-lightning/bitcoin
-
-bitcoind \
-  -regtest \
-  -server \
-  -txindex \
-  -fallbackfee=0.0002 \
-  -rpcuser=skillsats \
-  -rpcpassword=skillsats \
-  -zmqpubrawblock=tcp://127.0.0.1:28332 \
-  -zmqpubrawtx=tcp://127.0.0.1:28333 \
-  -datadir="$PWD/.local-lightning/bitcoin" \
-  -daemon
-
-bitcoin-cli \
-  -regtest \
-  -datadir="$PWD/.local-lightning/bitcoin" \
-  createwallet miner
-```
-
-Start the SkillSats LND node in one terminal:
-
-```bash
-mkdir -p .local-lightning/lnd-skillsats
-
-lnd \
-  --lnddir="$PWD/.local-lightning/lnd-skillsats" \
-  --alias=skillsats \
-  --bitcoin.regtest \
-  --bitcoin.node=bitcoind \
-  --bitcoind.rpchost=127.0.0.1:18443 \
-  --bitcoind.rpcuser=skillsats \
-  --bitcoind.rpcpass=skillsats \
-  --bitcoind.zmqpubrawblock=tcp://127.0.0.1:28332 \
-  --bitcoind.zmqpubrawtx=tcp://127.0.0.1:28333 \
-  --listen=127.0.0.1:9735 \
-  --rpclisten=127.0.0.1:10009 \
-  --restlisten=127.0.0.1:8080
-```
-
-Start the payer node in another terminal. It must use different peer, RPC, and REST ports:
-
-```bash
-mkdir -p .local-lightning/lnd-payer
-
-lnd \
-  --lnddir="$PWD/.local-lightning/lnd-payer" \
-  --alias=payer \
-  --bitcoin.regtest \
-  --bitcoin.node=bitcoind \
-  --bitcoind.rpchost=127.0.0.1:18443 \
-  --bitcoind.rpcuser=skillsats \
-  --bitcoind.rpcpass=skillsats \
-  --bitcoind.zmqpubrawblock=tcp://127.0.0.1:28332 \
-  --bitcoind.zmqpubrawtx=tcp://127.0.0.1:28333 \
-  --listen=127.0.0.1:9736 \
-  --rpclisten=127.0.0.1:10010 \
-  --restlisten=127.0.0.1:8081
-```
-
-Create both wallets. These commands prompt for local wallet passwords and display seed phrases:
-
-```bash
-lncli \
-  --network=regtest \
-  --lnddir="$PWD/.local-lightning/lnd-skillsats" \
-  --rpcserver=127.0.0.1:10009 \
-  create
-
-lncli \
-  --network=regtest \
-  --lnddir="$PWD/.local-lightning/lnd-payer" \
-  --rpcserver=127.0.0.1:10010 \
-  create
-```
-
-After restarting an existing node, replace `create` with `unlock` and enter that node's wallet
-password.
-
-For the remaining commands, source the helper script from the repository root to keep the
-node selection readable:
-
-```bash
-source scripts/local-lightning.sh
-```
-
-The following shell functions are now available:
-
-```bash
-btc() {
-  bitcoin-cli -regtest -datadir="$PWD/.local-lightning/bitcoin" "$@"
-}
-
-skillsats_ln() {
-  lncli --network=regtest \
-    --lnddir="$PWD/.local-lightning/lnd-skillsats" \
-    --rpcserver=127.0.0.1:10009 "$@"
-}
-
-payer_ln() {
-  lncli --network=regtest \
-    --lnddir="$PWD/.local-lightning/lnd-payer" \
-    --rpcserver=127.0.0.1:10010 "$@"
-}
-```
-
-Mine spendable regtest coins, fund the payer node, and confirm the deposit:
-
-```bash
-btc generatetoaddress 101 "$(btc getnewaddress)"
-
-# Copy the address field from this response:
-payer_ln newaddress p2wkh
-
-btc sendtoaddress <payer-address> 0.02
-btc generatetoaddress 6 "$(btc getnewaddress)"
-```
-
-Connect the nodes and open one balanced channel. Copy each node's `identity_pubkey` from
-`skillsats_ln getinfo` and `payer_ln getinfo`:
-
-```bash
-payer_ln connect <skillsats-pubkey>@127.0.0.1:9735
-
-payer_ln openchannel \
-  --node_key=<skillsats-pubkey> \
-  --local_amt=1000000 \
-  --push_amt=500000
-
-btc generatetoaddress 6 "$(btc getnewaddress)"
-```
-
-The pushed balance gives `skillsats` outbound liquidity for withdrawals while the payer retains
-outbound liquidity for purchases. Confirm that the channel is active with:
-
-```bash
-skillsats_ln listchannels
-payer_ln listchannels
-```
-
-Configure SkillSats to use the first node. Convert its admin macaroon to hex:
-
-```bash
-od -An -vtx1 \
-  .local-lightning/lnd-skillsats/data/chain/bitcoin/regtest/admin.macaroon |
-  tr -d ' \n'
-```
-
-Place the output and REST address in `.env`:
-
-```dotenv
-LND_REST_HOST="https://127.0.0.1:8080"
-LND_MACAROON="<admin-macaroon-hex>"
-```
-
-The development client accepts LND's self-signed TLS certificate. Never use this relaxation or an
-admin macaroon outside a disposable local regtest environment.
-
-Verify the connection after loading `.env` into the shell:
-
-```bash
-set -a
-source .env
-set +a
-curl --fail --silent --show-error --insecure \
-  --header "Grpc-Metadata-Macaroon: $LND_MACAROON" \
-  "$LND_REST_HOST/v1/getinfo"
-```
-
-The response should contain the `skillsats` alias and identity public key.
-
-To exercise both payment directions:
-
-1. Start SkillSats, log in as the seeded learner, and unlock a paid video.
-2. Copy the displayed invoice and pay it with `payer_ln payinvoice <invoice>`. SkillSats should
-   detect settlement and reveal the video.
-3. Create an invoice with `payer_ln addinvoice --amt=<sats>` and copy its `payment_request`.
-4. Log in to SkillSats as the seeded creator and withdraw to that invoice. The requested amount
-   must match the invoice and fit within both the creator balance and the `skillsats` node's
-   outbound channel balance.
-
-All coins in this setup are regtest coins with no real-world value. Stop the nodes with
-`skillsats_ln stop`, `payer_ln stop`, and `btc stop` when they are no longer needed.
 
 ## Prepare the Database
 

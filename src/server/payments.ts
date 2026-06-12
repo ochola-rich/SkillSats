@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db, runSerializable } from "../lib/db.server";
 import { requireAuth } from "../lib/auth.server";
-import { b64ToHex, getLndClient } from "../lib/lnd.server";
+import { b64ToHex, getLndClient, normalizeLndError } from "../lib/lnd.server";
 import { calculateCreatorRevenue } from "../lib/domain";
 import { invoiceStatusSchema, videoIdSchema } from "../lib/schemas";
 
@@ -23,11 +23,16 @@ export const purchaseVideo = createServerFn({ method: "POST" })
     if (existing) throw new Error("ALREADY_PURCHASED");
 
     // Create LND invoice
-    const { data: invoiceData } = await getLndClient().post("/v1/invoices", {
-      value: video.priceSats,
-      memo: `SkillSats: ${video.title}`,
-      expiry: 600, // 10-minute expiry
-    });
+    let invoiceData;
+    try {
+      ({ data: invoiceData } = await getLndClient().post("/v1/invoices", {
+        value: video.priceSats,
+        memo: `SkillSats: ${video.title}`,
+        expiry: 600, // 10-minute expiry
+      }));
+    } catch (error) {
+      throw normalizeLndError(error);
+    }
 
     // r_hash from LND is base64. Convert to hex for polling.
     const rHashHex = b64ToHex(invoiceData.r_hash);
@@ -74,7 +79,12 @@ export const checkInvoiceStatus = createServerFn({ method: "GET" })
     }
 
     // Poll LND for settlement status
-    const { data: invoiceData } = await getLndClient().get(`/v1/invoice/${data.rHash}`);
+    let invoiceData;
+    try {
+      ({ data: invoiceData } = await getLndClient().get(`/v1/invoice/${data.rHash}`));
+    } catch (error) {
+      throw normalizeLndError(error);
+    }
 
     if (invoiceData.settled) {
       await runSerializable(async (transaction) => {

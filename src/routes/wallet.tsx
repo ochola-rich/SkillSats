@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 
 import { useAuth } from "../hooks/use-auth";
-import { getErrorMessage, hasErrorCode } from "../lib/errors";
+import { getErrorMessage, hasErrorCode, isLightningUnavailable } from "../lib/errors";
 import { getAdWatchHistory } from "../server/ads";
 import { getBalance, withdrawFunds } from "../server/wallet";
 
@@ -60,7 +60,9 @@ function WalletPage() {
       setAmountSats(0);
       await Promise.all([refreshUser(), loadWallet()]);
     } catch (caught) {
-      if (hasErrorCode(caught, "INSUFFICIENT_BALANCE")) {
+      if (isLightningUnavailable(caught)) {
+        setError("Lightning withdrawals are unavailable in this environment.");
+      } else if (hasErrorCode(caught, "INSUFFICIENT_BALANCE")) {
         setError("Insufficient balance.");
       } else if (hasErrorCode(caught, "INVOICE_AMOUNT_MISMATCH")) {
         setError("The invoice amount does not match the withdrawal amount.");
