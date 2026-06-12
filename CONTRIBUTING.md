@@ -99,7 +99,7 @@ Start the Vite development server:
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:3000`.
+Open the local URL printed by Vite, normally `http://localhost:5173`.
 
 TanStack Router regenerates `src/routeTree.gen.ts` when route files change. Do not edit that file
 manually.
@@ -116,8 +116,59 @@ src/hooks/           Shared React hooks
 prisma/              Schema, migrations, and seed data
 ```
 
-Keep server logic in `createServerFn` handlers. Client components should call those functions
-directly rather than introducing separate REST endpoints or an Axios API client.
+## Routing Conventions
+
+TanStack Start uses file-based routing. Route modules belong in `src/routes/`; do not create
+Next.js or Remix structures such as `src/pages/`, `src/routes/_app/index.tsx`, or
+`app/layout.tsx`. The only root layout is `src/routes/__root.tsx`.
+
+| File                     | URL                                                            |
+| ------------------------ | -------------------------------------------------------------- |
+| `index.tsx`              | `/`                                                            |
+| `about.tsx`              | `/about`                                                       |
+| `users/index.tsx`        | `/users`                                                       |
+| `users/$id.tsx`          | `/users/:id` (dynamic; bare `$`, no curly braces)              |
+| `posts/{-$category}.tsx` | `/posts/:category?` (optional segment)                         |
+| `files/$.tsx`            | `/files/*` (splat; read through `_splat`, never `*`)           |
+| `_layout.tsx`            | Pathless layout route; render children with `<Outlet />`       |
+| `__root.tsx`             | Application shell; wraps every page and preserves `<Outlet />` |
+
+Use `.tsx` route modules for browser pages and `.ts` route modules for server-only API handlers.
+Nested directories and flat dot-separated names are both supported; follow the surrounding route
+style and avoid defining two files that resolve to the same URL.
+
+The current browser routes are:
+
+| File                 | URL               | Access                                    |
+| -------------------- | ----------------- | ----------------------------------------- |
+| `index.tsx`          | `/`               | Public                                    |
+| `learn.$videoId.tsx` | `/learn/:videoId` | Public metadata; login for paid purchases |
+| `login.tsx`          | `/login`          | Public                                    |
+| `register.tsx`       | `/register`       | Public                                    |
+| `earn.tsx`           | `/earn`           | Public page; login to claim rewards       |
+| `wallet.tsx`         | `/wallet`         | Authenticated                             |
+| `dashboard.tsx`      | `/dashboard`      | Creator accounts                          |
+
+## Server Functions and HTTP API
+
+Keep application business logic and authorization in `createServerFn` handlers under `src/server`.
+Client components should call those typed functions directly with `useServerFn` rather than using
+an Axios or `fetch` client.
+
+Stable JSON endpoints for external clients and OpenAPI tooling live under `src/routes/api`. They
+are thin server-route adapters over the same server functions; do not duplicate validation,
+authorization, accounting, database, or Lightning rules in route handlers.
+
+The API contract is maintained in `docs/openapi.json`. Update it whenever an API route, server
+function input, response shape, authentication rule, or documented browser route changes. Important
+conventions include:
+
+- The local development server defaults to `http://localhost:5173`.
+- Authentication uses the HTTP-only `auth_token` cookie, not a bearer token response.
+- JSON mutation requests from browsers must be same-origin.
+- Video creation accepts an existing `url`; multipart video upload is not implemented.
+- TanStack's generated `/_serverFn` identifiers are internal transport details and are not a stable
+  external API.
 
 ## Database Changes
 

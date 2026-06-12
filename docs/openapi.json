@@ -1,25 +1,139 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "SatsLearn API",
-    "description": "API for SatsLearn, a peer-to-peer education platform utilizing the Lightning Network for creator payments and ad rewards.",
-    "version": "1.0.0"
+    "title": "SkillSats API",
+    "description": "Stable JSON API for SkillSats, a peer-to-peer education marketplace powered by Bitcoin Lightning. The React application uses typed TanStack Start server functions internally; these /api routes expose the same operations to external clients and API tooling. Authentication uses the HTTP-only auth_token cookie set by registration or login. Browser mutation requests must be same-origin.",
+    "version": "1.1.0"
   },
   "servers": [
     {
-      "url": "http://localhost:4000",
-      "description": "Local development server"
+      "url": "http://localhost:5173",
+      "description": "Local TanStack Start development server"
     }
   ],
   "security": [
     {
-      "bearerAuth": []
+      "cookieAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Account registration and cookie-session management."
+    },
+    {
+      "name": "Videos",
+      "description": "Public course metadata, creator publishing, and protected video access."
+    },
+    {
+      "name": "Payments",
+      "description": "Lightning invoice creation and settlement polling."
+    },
+    {
+      "name": "Ads",
+      "description": "Advertising campaigns, viewer rewards, and watch history."
+    },
+    {
+      "name": "Wallet",
+      "description": "Custodial SkillSats balances and creator withdrawals."
+    }
+  ],
+  "x-tanstack-start": {
+    "generatedRouteTree": "src/routeTree.gen.ts is generated from src/routes and must not be edited manually.",
+    "internalRpc": "The first-party UI imports createServerFn handlers from src/server. TanStack dispatches those calls through generated /_serverFn identifiers, which are intentionally not a stable public API.",
+    "serverRoutes": "Stable HTTP endpoints are implemented as TanStack Start server handlers under src/routes/api and delegate to the same server functions used by the UI."
+  },
+  "x-routing-conventions": [
+    {
+      "file": "index.tsx",
+      "url": "/",
+      "description": "Directory index route."
+    },
+    {
+      "file": "about.tsx",
+      "url": "/about",
+      "description": "Static route segment."
+    },
+    {
+      "file": "users/index.tsx",
+      "url": "/users",
+      "description": "Nested directory index route."
+    },
+    {
+      "file": "users/$id.tsx",
+      "url": "/users/:id",
+      "description": "Required dynamic segment; use a bare $ in the file name."
+    },
+    {
+      "file": "posts/{-$category}.tsx",
+      "url": "/posts/:category?",
+      "description": "Optional dynamic segment."
+    },
+    {
+      "file": "files/$.tsx",
+      "url": "/files/*",
+      "description": "Splat route; read the value from the _splat parameter."
+    },
+    {
+      "file": "_layout.tsx",
+      "url": "(layout)",
+      "description": "Pathless layout route that renders child routes with Outlet."
+    },
+    {
+      "file": "__root.tsx",
+      "url": "(root)",
+      "description": "The single application shell; it must preserve Outlet."
+    }
+  ],
+  "x-browser-routes": [
+    {
+      "file": "src/routes/index.tsx",
+      "path": "/",
+      "access": "public",
+      "description": "Course browser."
+    },
+    {
+      "file": "src/routes/learn.$videoId.tsx",
+      "path": "/learn/:videoId",
+      "access": "public metadata; login required to purchase paid content",
+      "description": "Video metadata, access check, and Lightning purchase flow."
+    },
+    {
+      "file": "src/routes/login.tsx",
+      "path": "/login",
+      "access": "public",
+      "description": "Login form."
+    },
+    {
+      "file": "src/routes/register.tsx",
+      "path": "/register",
+      "access": "public",
+      "description": "Account registration form."
+    },
+    {
+      "file": "src/routes/earn.tsx",
+      "path": "/earn",
+      "access": "public page; login required to claim rewards",
+      "description": "Watch ads and claim sats."
+    },
+    {
+      "file": "src/routes/wallet.tsx",
+      "path": "/wallet",
+      "access": "authenticated",
+      "description": "Balance, ad earnings history, and creator withdrawals."
+    },
+    {
+      "file": "src/routes/dashboard.tsx",
+      "path": "/dashboard",
+      "access": "CREATOR",
+      "description": "Creator publishing and sales dashboard."
     }
   ],
   "paths": {
     "/api/auth/register": {
       "post": {
-        "summary": "Register a new user",
+        "operationId": "registerUser",
+        "summary": "Register a user",
         "tags": ["Auth"],
         "security": [],
         "requestBody": {
@@ -27,81 +141,22 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterDTO"
+                "$ref": "#/components/schemas/RegisterRequest"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "User created successfully",
-            "content": {
-              "application/json": {
+            "description": "Account created and auth_token cookie set.",
+            "headers": {
+              "Set-Cookie": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
-                }
+                  "type": "string"
+                },
+                "description": "HTTP-only auth_token session cookie."
               }
-            }
-          },
-          "400": {
-            "description": "Validation error or user already exists",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/auth/login": {
-      "post": {
-        "summary": "Login user",
-        "tags": ["Auth"],
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginDTO"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful login",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/auth/me": {
-      "get": {
-        "summary": "Get current user profile",
-        "tags": ["Auth"],
-        "responses": {
-          "200": {
-            "description": "User profile including balanceSats",
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -109,24 +164,126 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "403": {
+            "$ref": "#/components/responses/InvalidOrigin"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "loginUser",
+        "summary": "Log in",
+        "tags": ["Auth"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful and auth_token cookie set.",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "HTTP-only auth_token session cookie."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/InvalidOrigin"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "logoutUser",
+        "summary": "Log out",
+        "tags": ["Auth"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Session cookie cleared.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/InvalidOrigin"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "summary": "Get the current user",
+        "tags": ["Auth"],
+        "responses": {
+          "200": {
+            "description": "Current authenticated user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }
     },
     "/api/videos": {
       "get": {
-        "summary": "List all videos",
+        "operationId": "listVideos",
+        "summary": "List published videos",
         "tags": ["Videos"],
         "security": [],
         "responses": {
           "200": {
-            "description": "List of videos (excluding URLs for unpurchased content)",
+            "description": "Public video metadata. Video URLs are never included.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/VideoSummary"
+                    "$ref": "#/components/schemas/VideoMetadata"
                   }
                 }
               }
@@ -135,289 +292,411 @@
         }
       },
       "post": {
-        "summary": "Upload a new video (CREATOR only)",
+        "operationId": "createVideo",
+        "summary": "Publish a video",
+        "description": "CREATOR only. The hackathon implementation stores an existing CDN URL or local path; it does not accept file uploads.",
         "tags": ["Videos"],
         "requestBody": {
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateVideoDTO"
+                "$ref": "#/components/schemas/CreateVideoRequest"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Video created",
+            "description": "Video published.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/VideoSummary"
+                  "$ref": "#/components/schemas/CreatedResource"
                 }
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "403": {
-            "description": "Requires CREATOR role"
+            "$ref": "#/components/responses/Forbidden"
           }
         }
       }
     },
-    "/api/videos/{id}": {
+    "/api/videos/mine": {
       "get": {
-        "summary": "Get video metadata",
+        "operationId": "listMyVideos",
+        "summary": "List the current creator's videos",
         "tags": ["Videos"],
-        "security": [],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Single video metadata (never returns url if paid and unpurchased)",
+            "description": "Creator videos with settled purchase counts.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/VideoSummary"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/videos/{id}/purchase": {
-      "post": {
-        "summary": "Create LND invoice to purchase video",
-        "tags": ["Payments"],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Invoice created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PurchaseResponseDTO"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/videos/{id}/access": {
-      "get": {
-        "summary": "Get video streaming URL",
-        "tags": ["Videos"],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns URL if user has settled purchase or video is free",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "url": {
-                      "type": "string"
-                    }
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CreatorVideo"
                   }
                 }
               }
             }
           },
-          "402": {
-            "description": "Payment required"
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           }
         }
       }
     },
-    "/api/invoices/{r_hash}/status": {
+    "/api/videos/{videoId}": {
       "get": {
-        "summary": "Poll invoice settlement status",
-        "tags": ["Payments"],
+        "operationId": "getVideoMetadata",
+        "summary": "Get video metadata",
+        "tags": ["Videos"],
+        "security": [],
         "parameters": [
           {
-            "name": "r_hash",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "$ref": "#/components/parameters/VideoId"
           }
         ],
         "responses": {
           "200": {
-            "description": "Invoice status. Splits revenue on settlement.",
+            "description": "Public video metadata without the protected URL.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InvoiceStatusDTO"
+                  "$ref": "#/components/schemas/VideoMetadata"
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/videos/{videoId}/access": {
+      "get": {
+        "operationId": "getVideoAccess",
+        "summary": "Check video access",
+        "description": "Free video URLs are public. Paid video URLs require an authenticated user with a settled purchase. A valid request without a settled purchase returns hasAccess=false rather than HTTP 402.",
+        "tags": ["Videos"],
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {}
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VideoId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access decision and URL when authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoAccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/videos/{videoId}/purchase": {
+      "post": {
+        "operationId": "purchaseVideo",
+        "summary": "Create a video purchase invoice",
+        "tags": ["Payments"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/VideoId"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Ten-minute LND invoice created and pending purchase stored.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseInvoice"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/InvalidOrigin"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/api/invoices/{rHash}/status": {
+      "get": {
+        "operationId": "checkInvoiceStatus",
+        "summary": "Check purchase invoice settlement",
+        "description": "When LND reports settlement, the purchase is marked settled and 90% of the paid sats are credited to the creator exactly once.",
+        "tags": ["Payments"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PaymentHash"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current settlement state. videoUrl is non-null only after settlement.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           }
         }
       }
     },
     "/api/ads": {
       "post": {
-        "summary": "Create an ad campaign (ADVERTISER only)",
+        "operationId": "createAd",
+        "summary": "Create an ad campaign",
+        "description": "ADVERTISER only. Campaign budget funding is simulated in the hackathon implementation.",
         "tags": ["Ads"],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateAdDTO"
+                "$ref": "#/components/schemas/CreateAdRequest"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Ad created",
+            "description": "Ad campaign created.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Ad"
+                  "$ref": "#/components/schemas/CreatedResource"
                 }
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
           "403": {
-            "description": "Requires ADVERTISER role"
+            "$ref": "#/components/responses/Forbidden"
           }
         }
       }
     },
     "/api/ads/next": {
       "get": {
-        "summary": "Get next available ad to watch",
+        "operationId": "getNextAd",
+        "summary": "Get a random available ad",
+        "description": "Only active ads whose next full campaign reward fits within the remaining budget are eligible. rewardSats is the viewer's 60% share.",
         "tags": ["Ads"],
+        "security": [],
         "responses": {
           "200": {
-            "description": "Random active ad where spentSats + rewardSats <= budgetSats",
+            "description": "Available ad.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Ad"
+                  "$ref": "#/components/schemas/AvailableAd"
                 }
               }
             }
           },
           "204": {
-            "description": "No ads currently available"
+            "description": "No ad is currently available."
           }
         }
       }
     },
-    "/api/ads/{id}/watched": {
+    "/api/ads/{adId}/watched": {
       "post": {
-        "summary": "Claim sats for watching an ad",
+        "operationId": "markAdWatched",
+        "summary": "Claim an ad-view reward",
+        "description": "The same user may claim a specific ad at most once per 24 hours. The user receives 60% of rewardSats and the campaign spends the full rewardSats.",
         "tags": ["Ads"],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "$ref": "#/components/parameters/AdId"
           }
         ],
         "responses": {
           "200": {
-            "description": "Ad watched successfully, rewards distributed",
+            "description": "Reward credited.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdWatchedResponseDTO"
+                  "$ref": "#/components/schemas/AdReward"
                 }
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/InvalidOrigin"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
           "429": {
-            "description": "User has already watched this ad in the last 24 hours"
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        }
+      }
+    },
+    "/api/ads/history": {
+      "get": {
+        "operationId": "getAdWatchHistory",
+        "summary": "List recent ad rewards",
+        "description": "Returns up to 20 watches for the current user, newest first.",
+        "tags": ["Ads"],
+        "responses": {
+          "200": {
+            "description": "Ad watch history.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdWatch"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }
     },
     "/api/wallet/balance": {
       "get": {
-        "summary": "Get current wallet balance",
+        "operationId": "getBalance",
+        "summary": "Get the current balance",
+        "description": "The USD estimate uses the demo rate of 1 sat = $0.00065.",
         "tags": ["Wallet"],
         "responses": {
           "200": {
-            "description": "Current balance",
+            "description": "Current custodial balance.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "balanceSats": {
-                      "type": "integer"
-                    }
-                  }
+                  "$ref": "#/components/schemas/Balance"
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
           }
         }
       }
     },
     "/api/wallet/withdraw": {
       "post": {
-        "summary": "Withdraw sats via Lightning invoice",
+        "operationId": "withdrawFunds",
+        "summary": "Withdraw creator funds",
+        "description": "CREATOR only. The BOLT11 invoice must contain the same amount as amount_sats. The balance is deducted before payment and restored if LND payment fails.",
         "tags": ["Wallet"],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/WithdrawDTO"
+                "$ref": "#/components/schemas/WithdrawRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Withdrawal processed",
+            "description": "Lightning payment sent.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WithdrawResponseDTO"
+                  "$ref": "#/components/schemas/WithdrawResponse"
                 }
               }
             }
           },
           "400": {
-            "description": "Insufficient balance"
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/UnprocessableEntity"
+          },
+          "502": {
+            "$ref": "#/components/responses/BadGateway"
           }
         }
       }
@@ -425,151 +704,539 @@
   },
   "components": {
     "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "auth_token",
+        "description": "HTTP-only JWT cookie set by /api/auth/register or /api/auth/login."
+      }
+    },
+    "parameters": {
+      "VideoId": {
+        "name": "videoId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "AdId": {
+        "name": "adId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PaymentHash": {
+        "name": "rHash",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "description": "Hex-encoded LND payment hash."
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Malformed JSON or request validation failed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Authentication is missing or invalid.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "The authenticated user does not have the required role.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "InvalidOrigin": {
+        "description": "The browser request did not come from the API server's origin.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The requested application resource does not exist.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "The operation conflicts with existing state.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "UnprocessableEntity": {
+        "description": "The request is valid but cannot be processed, such as an invoice amount mismatch or insufficient balance.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "The 24-hour per-user, per-ad cooldown is active.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "BadGateway": {
+        "description": "The downstream LND payment failed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
       }
     },
     "schemas": {
+      "Role": {
+        "type": "string",
+        "enum": ["LEARNER", "CREATOR", "ADVERTISER"]
+      },
       "User": {
         "type": "object",
+        "required": ["id", "email", "username", "role", "balanceSats"],
         "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "email": { "type": "string", "format": "email" },
-          "username": { "type": "string" },
-          "role": {
+          "id": {
             "type": "string",
-            "enum": ["LEARNER", "CREATOR", "ADVERTISER"]
+            "format": "uuid"
           },
-          "balanceSats": { "type": "integer" },
-          "createdAt": { "type": "string", "format": "date-time" }
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "username": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "balanceSats": {
+            "type": "integer",
+            "minimum": 0
+          }
         }
       },
-      "VideoSummary": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "priceSats": { "type": "integer" },
-          "isFree": { "type": "boolean" },
-          "courseId": { "type": "string" },
-          "creatorId": { "type": "string" },
-          "creatorUsername": { "type": "string" },
-          "createdAt": { "type": "string", "format": "date-time" }
-        }
-      },
-      "Ad": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string", "format": "uuid" },
-          "title": { "type": "string" },
-          "videoUrl": { "type": "string" },
-          "rewardSats": { "type": "integer" },
-          "active": { "type": "boolean" }
-        }
-      },
-      "RegisterDTO": {
+      "RegisterRequest": {
         "type": "object",
         "required": ["email", "username", "password", "role"],
         "properties": {
-          "email": { "type": "string", "format": "email" },
-          "username": { "type": "string" },
-          "password": { "type": "string" },
-          "role": {
+          "email": {
             "type": "string",
-            "enum": ["LEARNER", "CREATOR", "ADVERTISER"]
+            "format": "email"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 32,
+            "pattern": "^[a-zA-Z0-9_]+$"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 8,
+            "maxLength": 72
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
           }
         }
       },
-      "LoginDTO": {
+      "LoginRequest": {
         "type": "object",
         "required": ["email", "password"],
         "properties": {
-          "email": { "type": "string" },
-          "password": { "type": "string" }
-        }
-      },
-      "AuthResponse": {
-        "type": "object",
-        "properties": {
-          "token": { "type": "string" }
-        }
-      },
-      "CreateVideoDTO": {
-        "type": "object",
-        "required": ["title", "description", "priceSats", "isFree", "courseId", "file"],
-        "properties": {
-          "title": { "type": "string" },
-          "description": { "type": "string" },
-          "priceSats": { "type": "integer" },
-          "isFree": { "type": "boolean" },
-          "courseId": { "type": "string" },
-          "file": {
+          "email": {
             "type": "string",
-            "format": "binary",
-            "description": "Video file handled via Multer"
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "minLength": 1,
+            "maxLength": 72
           }
         }
       },
-      "PurchaseResponseDTO": {
+      "SuccessResponse": {
         "type": "object",
+        "required": ["success"],
         "properties": {
-          "payment_request": { "type": "string" },
-          "r_hash": { "type": "string" },
-          "amount_sats": { "type": "integer" }
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
         }
       },
-      "InvoiceStatusDTO": {
+      "VideoMetadata": {
         "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "priceSats",
+          "isFree",
+          "courseId",
+          "creatorUsername",
+          "createdAt"
+        ],
         "properties": {
-          "settled": { "type": "boolean" },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "priceSats": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "isFree": {
+            "type": "boolean"
+          },
+          "courseId": {
+            "type": "string"
+          },
+          "creatorUsername": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateVideoRequest": {
+        "type": "object",
+        "required": ["title", "description", "url", "priceSats", "isFree", "courseId"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048,
+            "description": "Existing CDN URL or local media path."
+          },
+          "priceSats": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Must be greater than zero when isFree is false."
+          },
+          "isFree": {
+            "type": "boolean"
+          },
+          "courseId": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 100
+          }
+        }
+      },
+      "CreatedResource": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "CreatorVideo": {
+        "type": "object",
+        "required": ["id", "title", "priceSats", "isFree", "purchaseCount"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "priceSats": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "isFree": {
+            "type": "boolean"
+          },
+          "purchaseCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "VideoAccess": {
+        "type": "object",
+        "required": ["hasAccess", "videoUrl"],
+        "properties": {
+          "hasAccess": {
+            "type": "boolean"
+          },
           "videoUrl": {
             "type": "string",
-            "description": "Only present if settled is true"
+            "nullable": true,
+            "description": "Protected URL when hasAccess is true; otherwise null."
           }
         }
       },
-      "CreateAdDTO": {
+      "PurchaseInvoice": {
+        "type": "object",
+        "required": ["payment_request", "r_hash", "amount_sats"],
+        "properties": {
+          "payment_request": {
+            "type": "string",
+            "description": "BOLT11 invoice."
+          },
+          "r_hash": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$",
+            "description": "Hex-encoded payment hash used for status polling."
+          },
+          "amount_sats": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "InvoiceStatus": {
+        "type": "object",
+        "required": ["settled", "videoUrl"],
+        "properties": {
+          "settled": {
+            "type": "boolean"
+          },
+          "videoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CreateAdRequest": {
         "type": "object",
         "required": ["title", "videoUrl", "budgetSats", "rewardSats"],
         "properties": {
-          "title": { "type": "string" },
-          "videoUrl": { "type": "string" },
-          "budgetSats": { "type": "integer" },
-          "rewardSats": { "type": "integer" }
+          "title": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 120
+          },
+          "videoUrl": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2048
+          },
+          "budgetSats": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "rewardSats": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Must not exceed budgetSats."
+          }
         }
       },
-      "AdWatchedResponseDTO": {
+      "AvailableAd": {
         "type": "object",
+        "required": ["id", "title", "videoUrl", "rewardSats"],
         "properties": {
-          "earned": { "type": "integer" },
-          "newBalance": { "type": "integer" }
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "videoUrl": {
+            "type": "string"
+          },
+          "rewardSats": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "The viewer's 60% share after integer rounding."
+          }
         }
       },
-      "WithdrawDTO": {
+      "AdReward": {
+        "type": "object",
+        "required": ["earned", "newBalance"],
+        "properties": {
+          "earned": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "newBalance": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "AdWatch": {
+        "type": "object",
+        "required": ["id", "adTitle", "earnedSats", "watchedAt"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "adTitle": {
+            "type": "string"
+          },
+          "earnedSats": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "watchedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Balance": {
+        "type": "object",
+        "required": ["balanceSats", "approximateUSD"],
+        "properties": {
+          "balanceSats": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "approximateUSD": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]{2}$",
+            "example": "0.78"
+          }
+        }
+      },
+      "WithdrawRequest": {
         "type": "object",
         "required": ["payment_request", "amount_sats"],
         "properties": {
-          "payment_request": { "type": "string" },
-          "amount_sats": { "type": "integer" }
+          "payment_request": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 5000,
+            "description": "Exact-amount BOLT11 invoice."
+          },
+          "amount_sats": {
+            "type": "integer",
+            "minimum": 1
+          }
         }
       },
-      "WithdrawResponseDTO": {
+      "WithdrawResponse": {
         "type": "object",
+        "required": ["success", "payment_hash", "amount_sats"],
         "properties": {
-          "payment_hash": { "type": "string" },
-          "status": {
-            "type": "string",
-            "example": "sent"
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "payment_hash": {
+            "type": "string"
+          },
+          "amount_sats": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "ValidationIssue": {
+        "type": "object",
+        "required": ["path", "message"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
           }
         }
       },
       "ErrorResponse": {
         "type": "object",
+        "required": ["error"],
         "properties": {
-          "error": { "type": "string" }
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "UNAUTHENTICATED"
+              },
+              "message": {
+                "type": "string"
+              },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ValidationIssue"
+                }
+              }
+            }
+          }
         }
       }
     }
