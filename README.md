@@ -13,18 +13,17 @@ Bitcoin Lightning.
 ## Setup
 
 1. Install dependencies with `npm install`.
-2. Copy the required values into `.env`:
+2. Copy the default development environment with `cp .env.example .env`.
+3. Start PostgreSQL with `npm run db:up`.
+4. Run `npx prisma migrate dev`.
+5. Run `npx prisma db seed`.
+6. Start the app with `npm run dev`.
 
-   ```dotenv
-   DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/skillsats"
-   JWT_SECRET="replace-with-a-long-random-secret"
-   LND_REST_HOST="https://localhost:8080"
-   LND_MACAROON="..."
-   ```
+The Docker database uses the default URL already defined in `.env.example`:
 
-3. Run `npx prisma migrate dev`.
-4. Run `npx prisma db seed`.
-5. Start the app with `npm run dev`.
+```dotenv
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/skillsats"
+```
 
 Demo users are created by the seed script with password `password123`.
 
