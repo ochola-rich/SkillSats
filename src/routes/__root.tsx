@@ -174,7 +174,7 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-import { AuthProvider, useAuth } from "../context/AuthContext";
+import { AuthProvider } from "../context/auth";
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -294,9 +294,15 @@ function ScreenSwitcher() {
         <Link
           key={s.to}
           to={s.to}
+<<<<<<< HEAD
           className="rounded-lg px-3 py-1 text-xs font-medium text-gray-300 hover:bg-gray-800"
           activeProps={{
             className: "rounded-lg px-3 py-1 text-xs font-semibold bg-yellow-400 text-gray-950",
+=======
+          className="rounded-lg px-3 py-1 text-xs font-medium text-[#374D17] hover:bg-[#EAF3DE]"
+          activeProps={{
+            className: "rounded-lg px-3 py-1 text-xs font-semibold bg-[#3c6700] text-white",
+>>>>>>> main
           }}
           activeOptions={{ exact: true }}
         >

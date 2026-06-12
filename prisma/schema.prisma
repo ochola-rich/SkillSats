@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  LEARNER
+  CREATOR
+  ADVERTISER
+}
+
+model User {
+  id          String     @id @default(uuid())
+  email       String     @unique
+  username    String     @unique
+  password    String
+  role        Role       @default(LEARNER)
+  balanceSats Int        @default(0)
+  createdAt   DateTime   @default(now())
+  videos      Video[]
+  purchases   Purchase[]
+  adWatches   AdWatch[]
+}
+
+model Video {
+  id          String     @id @default(uuid())
+  title       String
+  description String
+  url         String
+  priceSats   Int
+  isFree      Boolean    @default(false)
+  courseId    String
+  creatorId   String
+  creator     User       @relation(fields: [creatorId], references: [id])
+  purchases   Purchase[]
+  createdAt   DateTime   @default(now())
+}
+
+model Purchase {
+  id        String   @id @default(uuid())
+  userId    String
+  videoId   String
+  paidSats  Int
+  invoice   String
+  rHash     String
+  settled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  video     Video    @relation(fields: [videoId], references: [id])
+}
+
+model Ad {
+  id         String    @id @default(uuid())
+  title      String
+  videoUrl   String
+  budgetSats Int
+  spentSats  Int       @default(0)
+  rewardSats Int
+  active     Boolean   @default(true)
+  watches    AdWatch[]
+}
+
+model AdWatch {
+  id         String   @id @default(uuid())
+  userId     String
+  adId       String
+  earnedSats Int
+  watchedAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  ad         Ad       @relation(fields: [adId], references: [id])
+}

@@ -142,3 +142,8 @@
     color: var(--color-foreground);
   }
 }
+
+/* Hide ad video timeline */
+video.ad-video::-webkit-media-controls-timeline {
+  display: none !important;
+}

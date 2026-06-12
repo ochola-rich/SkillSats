@@ -205,4 +205,7 @@ function WalletComponent() {
     </div>
   );
 }
+<<<<<<< HEAD
 export default WalletComponent;
+=======
+>>>>>>> main

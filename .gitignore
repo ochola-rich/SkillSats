@@ -33,3 +33,17 @@ dist-ssr
 
 temp/
 npm-cache/
+# Ignore all package manager lockfiles for the hackathon
+bun.lock
+bun.lockb
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Prisma
+/src/generated/prisma
