@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "dev:lightning": "bash scripts/lightning-docker.sh up && set -a; . ./.local-lightning/app.env; set +a; vite dev",
+    "setup:dev": "bash scripts/setup-dev.sh",
     "db:up": "docker compose up -d --wait postgres",
     "db:down": "docker compose stop postgres",
     "db:logs": "docker compose logs -f postgres",

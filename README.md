@@ -12,12 +12,13 @@ Bitcoin Lightning.
 
 ## Setup
 
-1. Install dependencies with `npm install`.
-2. Copy the default development environment with `cp .env.example .env`.
-3. Start PostgreSQL with `npm run db:up`.
-4. Run `npx prisma migrate dev`.
-5. Run `npx prisma db seed`.
-6. Start the app with `npm run dev`.
+Run the full development bootstrap on a new machine with:
+
+```bash
+npm run setup:dev
+```
+
+This command installs npm dependencies, copies `.env.example` to `.env` if needed, starts PostgreSQL, applies Prisma migrations, seeds the database, starts the local Lightning network, and verifies the Lightning setup.
 
 The Docker database uses the default URL already defined in `.env.example`:
 
