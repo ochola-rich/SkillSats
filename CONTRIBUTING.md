@@ -157,7 +157,14 @@ lncli \
 After restarting an existing node, replace `create` with `unlock` and enter that node's wallet
 password.
 
-For the remaining commands, these shell functions keep the node selection readable:
+For the remaining commands, source the helper script from the repository root to keep the
+node selection readable:
+
+```bash
+source scripts/local-lightning.sh
+```
+
+The following shell functions are now available:
 
 ```bash
 btc() {
